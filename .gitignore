@@ -213,10 +213,11 @@ pyrightconfig.json
 log/
 wandb/
 
-*.csv
-config.json
-pytorch_model.bin
 
 .*
 !.gitignore
 !.gitkeep
+
+/best_model
+/prediction
+/results
