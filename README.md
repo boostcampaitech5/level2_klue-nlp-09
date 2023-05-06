@@ -20,5 +20,6 @@ level2_klue-nlp-09
 |-- requirements.txt
 |-- results
 |-- train.py
+|-- .gitgnore
 `-- utils.py
 ```
