@@ -221,3 +221,5 @@ wandb/
 /best_model
 /prediction
 /results
+
+train_original.py
