@@ -139,7 +139,7 @@ def train(config) -> None:
     model.to(device)
 
     # init optimizer
-    optimizer = (AdamW(model.parameters(), lr=5e-5), None)
+    optimizer = (AdamW(model.parameters(), lr=config.learning_rate), None)
 
     # init wandb logger
     wandb.init(project=config.project_name, name=config.run_name)
