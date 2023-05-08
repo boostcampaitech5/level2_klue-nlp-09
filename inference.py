@@ -17,7 +17,7 @@ def inference(model, tokenized_sent, device):
     """
     test dataset을 DataLoader로 만들어 준 후,
     batch_size로 나눠 model이 예측 합니다.
-  """
+    """
     dataloader = DataLoader(tokenized_sent, batch_size=16, shuffle=False)
     model.eval()
     output_pred = []
