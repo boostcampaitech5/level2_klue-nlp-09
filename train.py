@@ -139,7 +139,8 @@ def train(config) -> None:
     model.to(device)
 
     # init optimizer
-    optimizer = (AdamW(model.parameters(), lr=config.learning_rate), None)
+    optimizer = AdamW(model.parameters(), lr=config.learning_rate)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=config.lr_scheduler_step_size, gamma=config.lr_scheduler_gamma)
 
     # init wandb logger
     wandb.init(project=config.project_name, name=config.run_name)
@@ -169,7 +170,7 @@ def train(config) -> None:
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,  # evaluation dataset
         compute_metrics=compute_metrics,  # define metrics function
-        optimizers=optimizer,  # define optimizer
+        optimizers=(optimizer, scheduler),  # define optimizer and scheduler
     )
 
     # train model

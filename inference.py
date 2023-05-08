@@ -110,7 +110,7 @@ if __name__ == "__main__":
     seed_everything(config.seed)
 
     # model dir
-    parser.add_argument("--model_dir", type=str, default="./best_model")
+    parser.add_argument("--model_dir", type=str, default="./best_model/bert_base/10epoch")
     args = parser.parse_args()
     print(args)
     main(args, config)
