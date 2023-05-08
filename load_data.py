@@ -20,6 +20,7 @@ class RE_Dataset(torch.utils.data.Dataset):
         return len(self.labels)
 
 def get_word_new(sentence):
+    # ?는 non-greedy matching
     result = re.search(r"'word': '(.+?)'", sentence)
     if result == None:
         result = re.search(r"'word': \"(.+?)\"", sentence)
