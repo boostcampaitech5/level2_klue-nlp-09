@@ -1,9 +1,9 @@
-# ¹®Àå ³» °³Ã¼°£ °ü°è ÃßÃâ
+# ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 ![asdf](https://user-images.githubusercontent.com/82187742/236622385-1af75b87-b5ef-4028-9b82-a52981007cf7.png)
 
 
 
-## ÆÄÀÏ ±¸Á¶
+## ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 ```
 level2_klue-nlp-09
 |-- README.md
@@ -13,6 +13,7 @@ level2_klue-nlp-09
 |-- eda
 |   |-- JYS.ipynb
 |   |-- KSH.ipynb
+|   |-- LDH.ipynb
 |   `-- LJS.ipynb
 |-- inference.py
 |-- load_data.py
