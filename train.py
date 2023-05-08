@@ -77,7 +77,7 @@ def klue_re_auprc(probs, labels) -> float:
 
 
 def compute_metrics(pred) -> dict:
-    """ validation을 위한 metrics function """
+    """validation을 위한 metrics function"""
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
     probs = pred.predictions
@@ -180,11 +180,12 @@ def train(config) -> None:
 
 
 def main():
-    config = load_yaml()
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
+    model_name = model_dict[2]
+    config = load_yaml(model_name)
     seed_everything(config.seed)
     train(config)
 
 
 if __name__ == "__main__":
     main()
-
