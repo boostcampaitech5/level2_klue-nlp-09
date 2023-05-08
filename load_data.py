@@ -2,7 +2,7 @@ import pickle as pickle
 import os
 import pandas as pd
 import torch
-
+import re
 
 class RE_Dataset(torch.utils.data.Dataset):
     """ Dataset 구성을 위한 class."""
@@ -19,14 +19,27 @@ class RE_Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels)
 
+def get_word_new(sentence):
+    # ?는 non-greedy matching
+    result = re.search(r"'word': '(.+?)'", sentence)
+    if result == None:
+        result = re.search(r"'word': \"(.+?)\"", sentence)
+    result = result.group(1).strip("\"")
+    match = re.search(r"\B'\b|\b'\B", result[:-1])
+    if match:
+        pass
+    else:
+        result = result.strip("'")
+    # result = "'" + result + "'"
+    return result
 
 def preprocessing_dataset(dataset):
     """ 처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
     subject_entity = []
     object_entity = []
     for i, j in zip(dataset["subject_entity"], dataset["object_entity"]):
-        i = i[1:-1].split(",")[0].split(":")[1]
-        j = j[1:-1].split(",")[0].split(":")[1]
+        i = get_word_new(i)
+        j = get_word_new(j)
 
         subject_entity.append(i)
         object_entity.append(j)
@@ -91,4 +104,5 @@ def tokenized_dataset(dataset, tokenizer):
     tokenized_sentences = tokenizer(
         concat_entity, list(dataset["sentence"]), return_tensors="pt", padding=True, truncation=True, max_length=256, add_special_tokens=True,
     )
+    
     return tokenized_sentences
