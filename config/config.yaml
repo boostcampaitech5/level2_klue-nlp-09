@@ -29,7 +29,7 @@ eval_steps: 100  # evaluation step.
 load_best_model_at_end: True
 
 # save
-save_path: ./model/best_model
+save_path: ./best_model
 
 # wandb
 run_name: test
