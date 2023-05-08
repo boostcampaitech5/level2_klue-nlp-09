@@ -221,6 +221,5 @@ wandb/
 /best_model
 /prediction
 /results
-/model/
 
 train_original.py
