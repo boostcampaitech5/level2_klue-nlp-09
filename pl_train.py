@@ -100,11 +100,11 @@ class Dataloader(pl.LightningDataModule):
     def setup(self, stage="fit"):
         if stage == "fit":
             # 학습 데이터와 검증 데이터셋을 호출합니다
-            train_data = pd.read_csv(self.train_path)
-            val_data = pd.read_csv(self.dev_path)
+            train_dataset = pd.read_csv(self.train_path)
+            dev_dataset = pd.read_csv(self.dev_path)
 
-            train_data = self.preprocessing(train_data)
-            val_data = self.preprocessing(val_data)
+            train_dataset = self.preprocessing(train_dataset)
+            dev_dataset = self.preprocessing(dev_dataset)
 
             def label_to_num(label: list) -> list:
                 num_label = []
@@ -115,31 +115,30 @@ class Dataloader(pl.LightningDataModule):
 
                 return num_label
 
-            train_label = label_to_num(train_data["label"].values)
-            val_label = label_to_num(val_data["label"].values)
+            train_label = label_to_num(train_dataset["label"].values)
+            dev_label = label_to_num(dev_dataset["label"].values)
 
-            # print(train_data)
-            # print(type(train_data))
-
-            train_data = self.tokenizing(train_data)
-            val_data = self.tokenizing(val_data)
+            tokenized_train = self.tokenizing(train_dataset)
+            tokenized_dev = self.tokenizing(dev_dataset)
 
             # 학습데이터 준비
             # self.train_inputs, self.train_targets = self.preprocessing(train_data)
-            self.train_dataset = RE_Dataset(train_data, train_label)
+            self.train_dataset = RE_Dataset(tokenized_train, train_label)
 
             # 검증데이터 준비
-            self.val_dataset = RE_Dataset(val_data, val_label)
+            self.dev_dataset = RE_Dataset(tokenized_dev, dev_label)
         else:
             # 평가데이터 준비
-            test_data = pd.read_csv(self.test_path)
-            test_data = self.preprocessing(test_data)
-            test_label = label_to_num(test_data["label"].values)
-            self.test_dataset = RE_Dataset(test_data, test_label)
+            test_dataset = pd.read_csv(self.test_path)
+            test_dataset = self.preprocessing(test_dataset)
+            test_label = label_to_num(test_dataset["label"].values)
+            tokenized_test = self.tokenizing(test_dataset)
+            self.test_dataset = RE_Dataset(tokenized_test, test_label)
 
-            predict_data = pd.read_csv(self.predict_path)
-            predict_data = self.preprocessing(predict_data)
-            self.predict_dataset = RE_Dataset(predict_data, [])
+            predict_dataset = pd.read_csv(self.predict_path)
+            predict_dataset = self.preprocessing(predict_dataset)
+            tokenized_predict = self.tokenizing(predict_dataset)
+            self.predict_dataset = RE_Dataset(tokenized_predict, [])
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle)
@@ -191,6 +190,7 @@ def klue_re_micro_f1(preds, labels) -> float:
     no_relation_label_idx = label_list.index("no_relation")
     label_indices = list(range(len(label_list)))
     label_indices.remove(no_relation_label_idx)
+
     return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
 
 
