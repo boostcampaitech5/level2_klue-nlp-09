@@ -11,6 +11,7 @@ level2_klue-nlp-09
 |-- config
 |   `-- config.yaml
 |-- eda
+|   |-- HCW.ipynb
 |   |-- JYS.ipynb
 |   |-- KSH.ipynb
 |   |-- LDH.ipynb
