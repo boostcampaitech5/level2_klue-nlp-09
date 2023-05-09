@@ -7,8 +7,7 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
-# from pytorch_lightning.tuner import Tuner
-# from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping, ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping, ModelCheckpoint
 
 from itertools import chain
 
@@ -49,14 +48,14 @@ class Dataloader(pl.LightningDataModule):
         self.predict_path = predict_path
 
         self.train_dataset = None
-        self.val_dataset = None
+        self.dev_dataset = None
         self.test_dataset = None
         self.predict_dataset = None
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, max_length=256)
-        self.target_columns = ["label"]
-        self.delete_columns = ["id"]
-        self.text_columns = ["sentence_1", "sentence_2"]
+        # self.target_columns = ["label"]
+        # self.delete_columns = ["id"]
+        # self.text_columns = ["sentence_1", "sentence_2"]
 
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
@@ -97,24 +96,23 @@ class Dataloader(pl.LightningDataModule):
         )
         return out_dataset
 
-    def setup(self, stage="fit"):
-        if stage == "fit":
+    def setup(self, stage=None):
+        def label_to_num(label: list) -> list:
+            num_label = []
+            with open("dict_label_to_num.pkl", "rb") as f:
+                dict_label_to_num = pickle.load(f)
+            for v in label:
+                num_label.append(dict_label_to_num[v])
+
+            return num_label
+
+        if stage == "fit" or stage is None:
             # 학습 데이터와 검증 데이터셋을 호출합니다
             train_dataset = pd.read_csv(self.train_path)
             dev_dataset = pd.read_csv(self.dev_path)
 
             train_dataset = self.preprocessing(train_dataset)
             dev_dataset = self.preprocessing(dev_dataset)
-
-            def label_to_num(label: list) -> list:
-                num_label = []
-                with open("dict_label_to_num.pkl", "rb") as f:
-                    dict_label_to_num = pickle.load(f)
-                for v in label:
-                    num_label.append(dict_label_to_num[v])
-
-                return num_label
-
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
 
@@ -127,6 +125,7 @@ class Dataloader(pl.LightningDataModule):
 
             # 검증데이터 준비
             self.dev_dataset = RE_Dataset(tokenized_dev, dev_label)
+
         else:
             # 평가데이터 준비
             test_dataset = pd.read_csv(self.test_path)
@@ -144,7 +143,7 @@ class Dataloader(pl.LightningDataModule):
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle)
 
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.val_dataset, batch_size=self.batch_size)
+        return torch.utils.data.DataLoader(self.dev_dataset, batch_size=self.batch_size)
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size)
@@ -240,35 +239,50 @@ class Model(pl.LightningModule):
         # 사용할 모델을 호출
         self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
         # Loss 계산을 위해 사용될 손실함수를 호출
-        self.loss_func = compute_metrics
+        self.loss_func = torch.nn.CrossEntropyLoss()
 
     def forward(self, x):
-        x = self.plm(x)["logits"]
+        input_ids = x["input_ids"]
+        token_type_ids = x["token_type_ids"]
+        attention_mask = x["attention_mask"]
+        logits = self.plm(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)["logits"]
 
-        return x
+        return logits
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        y = batch["labels"]
         logits = self(x)
-        loss = self.loss_func(logits, y.float())
+        loss = self.loss_func(logits.float(), y)
         self.log("train_loss", loss)
+
+        f1 = klue_re_micro_f1(y.cpu(), logits.argmax(-1).cpu())
+        self.log("train_f1", f1)
 
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
+        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        y = batch["labels"]
+
         logits = self(x)
-        loss = self.loss_func(logits, y.float())
+
+        loss = self.loss_func(logits.float(), y)
         self.log("val_loss", loss)
+
+        f1 = klue_re_micro_f1(y.cpu(), logits.argmax(-1).cpu())
+        self.log("val_f1", f1)
 
         return loss
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
+        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        y = batch["labels"]
         logits = self(x)
 
     def predict_step(self, batch, batch_idx):
-        x = batch
+        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        y = batch["labels"]
         logits = self(x)
 
         return logits.squeeze()
@@ -297,8 +311,9 @@ class Model(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[0]
+    # model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
+    # model_name = model_dict[0]
+    model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
     seed_everything(config.seed)
@@ -334,18 +349,18 @@ if __name__ == "__main__":
         precision="16-mixed",  # 16-bit mixed precision
         accelerator="gpu",  # GPU 사용
         # dataloader를 매 epoch마다 reload해서 resampling
-        reload_dataloaders_every_n_epochs=1,
+        # reload_dataloaders_every_n_epochs=1,
         max_epochs=config.num_train_epochs,  # 최대 epoch 수
         logger=wandb_logger,  # wandb logger 사용
         log_every_n_steps=1,  # 1 step마다 로그 기록
         val_check_interval=0.25,  # 0.25 epoch마다 validation
         check_val_every_n_epoch=1,  # val_check_interval의 기준이 되는 epoch 수
-        # callbacks=[
-        #     # learning rate를 매 step마다 기록
-        #     LearningRateMonitor(logging_interval="step"),
-        #     EarlyStopping("val_pearson", patience=8, mode="max", check_finite=False),  # validation pearson이 8번 이상 개선되지 않으면 학습을 종료
-        #     CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
-        # ],
+        callbacks=[
+            # learning rate를 매 step마다 기록
+            LearningRateMonitor(logging_interval="step"),
+            #     EarlyStopping("val_pearson", patience=8, mode="max", check_finite=False),  # validation pearson이 8번 이상 개선되지 않으면 학습을 종료
+            #     CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
+        ],
     )
 
     # use Tuner to get optimized batch size
@@ -357,5 +372,5 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    # torch.save(model, 'model.pt')
-    model.save_pretrained(config.save_path)
+    torch.save(model, "model.pt")
+    # model.save_pretrained(config.save_path)
