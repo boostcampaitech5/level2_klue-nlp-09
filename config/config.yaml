@@ -2,9 +2,9 @@
 model_name: klue/bert-base
 
 # data
-train_path: ../dataset/train/v1/train.csv
-dev_path: ../dataset/train/v1/dev.csv
-predict_path: ../dataset/test/test_data.csv
+train_path: ./dataset/train/train_90.csv
+dev_path: ./dataset/dev/dev_10.csv
+predict_path: ./dataset/test/test.csv
 
 # seed
 seed: 42

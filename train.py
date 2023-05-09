@@ -17,6 +17,7 @@ from transformers import (
     BertTokenizer,
     AdamW,
 )
+from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
 from load_data import *
 
 import wandb
@@ -114,6 +115,17 @@ def train(config) -> None:
     # load dataset
     train_dataset = load_data(config.train_path)
     dev_dataset = load_data(config.dev_path)
+
+    #############################
+    cleaning_list = config.data_clean
+    augmentation_list = config.data_aug
+    
+    sc = SC(cleaning_list)
+    sa = SA(augmentation_list)
+    
+    train_dataset = sc.process(train_dataset)
+    train_dataset = sa.process(train_dataset)
+    ################################
 
     train_label = label_to_num(train_dataset["label"].values)
     dev_label = label_to_num(dev_dataset["label"].values)
