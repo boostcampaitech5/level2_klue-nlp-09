@@ -17,6 +17,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 import wandb
 from utils import seed_everything, load_yaml
+import re
 
 
 class RE_Dataset(torch.utils.data.Dataset):
@@ -77,11 +78,26 @@ class Dataloader(pl.LightningDataModule):
 
     def preprocessing(self, dataset):
         """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
+
+        def get_word_new(sentence):
+            # ?는 non-greedy matching
+            result = re.search(r"'word': '(.+?)'", sentence)
+            if result == None:
+                result = re.search(r"'word': \"(.+?)\"", sentence)
+            result = result.group(1).strip('"')
+            match = re.search(r"\B'\b|\b'\B", result[:-1])
+            if match:
+                pass
+            else:
+                result = result.strip("'")
+            # result = "'" + result + "'"
+            return result
+
         subject_entity = []
         object_entity = []
         for i, j in zip(dataset["subject_entity"], dataset["object_entity"]):
-            i = i[1:-1].split(",")[0].split(":")[1]
-            j = j[1:-1].split(",")[0].split(":")[1]
+            i = get_word_new(i)
+            j = get_word_new(j)
 
             subject_entity.append(i)
             object_entity.append(j)
