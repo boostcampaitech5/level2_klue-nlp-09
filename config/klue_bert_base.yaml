@@ -2,9 +2,9 @@
 model_name: klue/bert-base
 
 # data
-train_path: ../dataset/train/v1/train.csv
-dev_path: ../dataset/train/v1/dev.csv
-predict_path: ../dataset/test/test_data.csv
+train_path: ../dataset/train/train_js.csv
+dev_path: ../dataset/dev/dev_js.csv
+predict_path: ../dataset/test_data.csv
 
 # seed
 seed: 42
@@ -25,12 +25,12 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `no`: No evaluation during training.
                             # `steps`: Evaluate every `eval_steps`.
                             # `epoch`: Evaluate every end of epoch.
-eval_steps: 100  # evaluation step.
+eval_steps: 500  # evaluation step.
 load_best_model_at_end: True
 
 # save
 save_path: ./best_model
 
 # wandb
-run_name: test
+run_name: klue/bert-base
 project_name: klue
