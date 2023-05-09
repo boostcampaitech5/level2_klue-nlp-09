@@ -97,7 +97,7 @@ def main(args, config):
             "probs": output_prob,
         }
     )
-    output.to_csv("./prediction/submission.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    output.to_csv("./prediction/org.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
     print("---- Finish! ----")
 
@@ -105,12 +105,12 @@ def main(args, config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[1]
+    model_name = model_dict[0]
     config = load_yaml(model_name)
     seed_everything(config.seed)
 
     # model dir
-    parser.add_argument("--model_dir", type=str, default="./best_model")
+    parser.add_argument("--model_dir", type=str, default="./model/org")
     args = parser.parse_args()
     print(args)
     main(args, config)

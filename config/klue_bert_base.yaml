@@ -2,9 +2,9 @@
 model_name: klue/bert-base
 
 # data
-train_path: ../dataset/train/train_90_PER.csv
-dev_path: ../dataset/dev/dev_10_PER.csv
-predict_path: ../dataset/test/test_data.csv
+train_path: ../dataset/train/train_90_ORG.csv
+dev_path: ../dataset/dev/dev_10_ORG.csv
+predict_path: ../dataset/test/test_ORG.csv
 
 # seed
 seed: 42
@@ -29,7 +29,7 @@ eval_steps: 800  # evaluation step.
 load_best_model_at_end: True
 
 # save
-save_path: ./model/per
+save_path: ./model/org
 
 # wandb
 run_name: test
