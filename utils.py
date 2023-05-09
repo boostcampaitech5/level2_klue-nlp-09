@@ -28,7 +28,7 @@ def seed_everything(seed: int) -> None:
     # pl.seed_everything(seed, workers=True)
 
 
-def load_yaml() -> dict:
+def load_yaml(model_name: str) -> dict:
     # parser = argparse.ArgumentParser()
     # parser.add_argument("--model_name", default=None)
     # parser.add_argument("--batch_size", default=None)
@@ -47,8 +47,10 @@ def load_yaml() -> dict:
     # parser.add_argument("--entity", default=None)  # wandb team name
     # args = parser.parse_args()
 
-    with open("./config/config.yaml") as f:
+    with open(f"./config/{model_name}.yaml") as f:
         config_dict = yaml.load(f, Loader=yaml.FullLoader)
+    # with open(f"./config/klue_roberta_large.yaml") as f:
+    #     config_dict = yaml.load(f, Loader=yaml.FullLoader)
 
     # for key in args.__dict__:
     #     if args.__dict__[key] is not None:

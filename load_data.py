@@ -2,7 +2,7 @@ import pickle as pickle
 import os
 import pandas as pd
 import torch
-
+import re
 
 class RE_Dataset(torch.utils.data.Dataset):
     """ Dataset 구성을 위한 class."""
@@ -19,8 +19,42 @@ class RE_Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels)
 
+def get_word_new(sentence):
+    # ?는 non-greedy matching
+    result = re.search(r"'word': '(.+?)'", sentence)
+    if result == None:
+        result = re.search(r"'word': \"(.+?)\"", sentence)
+    result = result.group(1).strip("\"")
+    match = re.search(r"\B'\b|\b'\B", result[:-1])
+    if match:
+        pass
+    else:
+        result = result.strip("'")
+    # result = "'" + result + "'"
+    return result
 
 def preprocessing_dataset(dataset):
+    """ 처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
+    subject_entity = []
+    object_entity = []
+    for i, j in zip(dataset["subject_entity"], dataset["object_entity"]):
+        i = get_word_new(i)
+        j = get_word_new(j)
+
+        subject_entity.append(i)
+        object_entity.append(j)
+    out_dataset = pd.DataFrame(
+        {"id": dataset["id"], 
+         "sentence": dataset["sentence"], 
+         "subject_entity": subject_entity, 
+         "object_entity": object_entity, 
+         "label": dataset["label"],
+        }
+    )
+    return out_dataset
+
+
+def preprocessing_dataset_large_class(dataset):
     """ 처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
     subject_entity = []
     object_entity = []
@@ -31,16 +65,32 @@ def preprocessing_dataset(dataset):
         subject_entity.append(i)
         object_entity.append(j)
     out_dataset = pd.DataFrame(
-        {"id": dataset["id"], "sentence": dataset["sentence"], "subject_entity": subject_entity, "object_entity": object_entity, "label": dataset["label"],}
+        {"id": dataset["id"], 
+         "sentence": dataset["sentence"], 
+         "subject_entity": subject_entity, 
+         "object_entity": object_entity, 
+         "label": dataset["label"][0],
+        }
     )
     return out_dataset
 
 
 def load_data(dataset_dir):
-    """ csv 파일을 경로에 맡게 불러 옵니다. """
+    """ csv 파일을 경로에 맞게 불러 옵니다. """
     pd_dataset = pd.read_csv(dataset_dir)
     dataset = preprocessing_dataset(pd_dataset)
 
+    return dataset
+
+
+def load_data_large_class(dataset_dir):
+    """ 
+    csv 파일을 경로에 맞게 불러 옵니다. 
+    이후, label은 no_relation의 "n", per:~의 "p", org:~의 "o"만 따와 대분류로 설정해줍니다.
+    """
+    pd_dataset = pd.read_csv(dataset_dir)
+    dataset = preprocessing_dataset_large_class(pd_dataset)
+    
     return dataset
 
 
@@ -54,4 +104,5 @@ def tokenized_dataset(dataset, tokenizer):
     tokenized_sentences = tokenizer(
         concat_entity, list(dataset["sentence"]), return_tensors="pt", padding=True, truncation=True, max_length=256, add_special_tokens=True,
     )
+    
     return tokenized_sentences
