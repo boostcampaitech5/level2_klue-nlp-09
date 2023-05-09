@@ -32,5 +32,5 @@ load_best_model_at_end: True
 save_path: ./best_model
 
 # wandb
-run_name: test
+run_name: compare_test_pl
 project_name: pl_test
