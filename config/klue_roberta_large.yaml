@@ -34,3 +34,8 @@ save_path: ./best_model
 # wandb
 run_name: data_v1
 project_name: klue-roberta-large
+
+data_clean:
+  - spellcheck
+data_aug:
+  - swap_text
