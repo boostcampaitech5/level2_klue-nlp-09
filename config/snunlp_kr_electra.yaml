@@ -38,3 +38,8 @@ save_path: ./best_model
 # wandb
 run_name: v1_10e_64b
 project_name: snunlp-KR-ELECTRA
+
+data_clean:
+  - spellcheck
+data_aug:
+  - swap_text

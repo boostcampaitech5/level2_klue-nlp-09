@@ -38,3 +38,8 @@ save_path: ./best_model
 # wandb
 run_name: v1_new_tokenizer
 project_name: klue
+
+data_clean:
+  - spellcheck
+data_aug:
+  - swap_text
