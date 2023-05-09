@@ -113,6 +113,7 @@ class Dataloader(pl.LightningDataModule):
 
             train_dataset = self.preprocessing(train_dataset)
             dev_dataset = self.preprocessing(dev_dataset)
+
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
 
@@ -136,8 +137,9 @@ class Dataloader(pl.LightningDataModule):
 
             predict_dataset = pd.read_csv(self.predict_path)
             predict_dataset = self.preprocessing(predict_dataset)
+            predict_label = predict_dataset["label"].values
             tokenized_predict = self.tokenizing(predict_dataset)
-            self.predict_dataset = RE_Dataset(tokenized_predict, [])
+            self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle)
@@ -256,8 +258,10 @@ class Model(pl.LightningModule):
         loss = self.loss_func(logits.float(), y)
         self.log("train_loss", loss)
 
-        f1 = klue_re_micro_f1(y.cpu(), logits.argmax(-1).cpu())
+        f1 = klue_re_micro_f1(logits.argmax(-1).cpu(), y.cpu())
         self.log("train_f1", f1)
+        # auprc = klue_re_auprc(logits.cpu(), y.cpu())
+        # self.log("train_auprc", auprc)
 
         return loss
 
@@ -270,8 +274,10 @@ class Model(pl.LightningModule):
         loss = self.loss_func(logits.float(), y)
         self.log("val_loss", loss)
 
-        f1 = klue_re_micro_f1(y.cpu(), logits.argmax(-1).cpu())
+        f1 = klue_re_micro_f1(logits.argmax(-1).cpu(), y.cpu())
         self.log("val_f1", f1)
+        # auprc = klue_re_auprc(logits.cpu(), y.cpu())
+        # self.log("val_auprc", auprc)
 
         return loss
 
@@ -374,3 +380,6 @@ if __name__ == "__main__":
     # # 학습이 완료된 모델을 저장합니다.
     torch.save(model, "model.pt")
     # model.save_pretrained(config.save_path)
+
+# TODO: auprc, accuracy 적용
+# TODO: 기타 기능 적용
