@@ -28,6 +28,10 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
 eval_steps: 500  # evaluation step.
 load_best_model_at_end: True
 
+# lr scheduler
+lr_scheduler_step_size: 457
+lr_scheduler_gamma: 0.9
+
 # save
 save_path: ./best_model
 

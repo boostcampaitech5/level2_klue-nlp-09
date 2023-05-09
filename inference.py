@@ -105,7 +105,7 @@ def main(args, config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[0]
+    model_name = model_dict[2]
     config = load_yaml(model_name)
     seed_everything(config.seed)
 
