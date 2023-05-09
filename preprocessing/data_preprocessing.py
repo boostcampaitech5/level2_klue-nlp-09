@@ -13,6 +13,7 @@ def swap_text(df):
   new_df = df
   return new_df
 
+
 def synonym_replacement(data, n=2):
     wordnet = {}
     with open("wordnet.pickle", "rb") as f:
@@ -29,7 +30,7 @@ def synonym_replacement(data, n=2):
     for uk in useless_keys:
         del wordnet[uk]
 
-    # synonym replacement 메인
+    # synonym replacement 메인 
     replaced_dict = defaultdict(list)
     for idx, d in data.iterrows():
         sentence = d.sentence
