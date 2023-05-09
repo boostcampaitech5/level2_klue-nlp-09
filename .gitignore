@@ -223,3 +223,9 @@ wandb/
 /results
 
 train_original.py
+
+# check points
+*.ckpt
+
+# model.pt
+*.pt
