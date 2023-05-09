@@ -105,12 +105,12 @@ def main(args, config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[1]
+    model_name = model_dict[2]
     config = load_yaml(model_name)
     seed_everything(config.seed)
 
     # model dir
-    parser.add_argument("--model_dir", type=str, default="./best_model")
+    parser.add_argument("--model_dir", type=str, default="./best_model/bert_base/10epoch")
     args = parser.parse_args()
     print(args)
     main(args, config)
