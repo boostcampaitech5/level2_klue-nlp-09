@@ -90,6 +90,9 @@ def synonym_replacement(data, n=2):
         okt = Okt()
         words = [ss for ss in okt.morphs(sentence) if len(ss) > 1] # 1글자 유의어는 틀릴 확률이 너무 높기 때문에, 2글자 이상 단어만
         random_words = list(set([word for word in words]))
+        for random_word in random_words:
+            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+                random_words.remove(random_word)
         random.shuffle(random_words)
         
         # 형태소 단위 단어 중 최대 n개의 단어를 유의어로 교체
@@ -98,18 +101,18 @@ def synonym_replacement(data, n=2):
         original_words, replaced_words = [], []
         len_changes = []
         for random_word in random_words:
-            if random_word not in sbj_dict['word'] and random_word not in obj_dict['word']: # entity에 들어있지 않은 단어들만
-                synonyms = get_synonyms(random_word)
-                if synonyms:
-                    replaced_index = replaced_sentence.find(random_word)
-                    replaced_indices.append(replaced_index)
-                    
-                    synonym = random.choice(list(synonyms))
-                    original_words.append(random_word)
-                    replaced_words.append(synonym)
-                    len_changes.append(len(synonym) - len(random_word))
-                    replaced_sentence = replaced_sentence.replace(random_word, synonym, 1) # 중복 단어인 경우 1개만 변경. 몇 번째 단어를 바꿀지도 정할 수 있으면 좋음(나중에).
-                    num_replaced += 1
+            synonyms = get_synonyms(random_word)
+            if synonyms:
+                replaced_index = replaced_sentence.find(random_word)
+                replaced_indices.append(replaced_index)
+
+                synonym = random.choice(list(synonyms))
+                original_words.append(random_word)
+                replaced_words.append(synonym)
+                len_changes.append(len(synonym) - len(random_word))
+                replaced_sentence = replaced_sentence.replace(random_word, synonym, 1) # 중복 단어인 경우 1개만 변경. 몇 번째 단어를 바꿀지도 정할 수 있으면 좋음(나중에).
+                
+                num_replaced += 1
                     
             if num_replaced == n:
                 break
@@ -161,6 +164,255 @@ def synonym_replacement(data, n=2):
             pass
 
         return synonyms
+
+    return augmented_data
+
+
+def random_deletion(data, n=1):
+    replaced_dict = defaultdict(list)
+    for idx, d in data.iterrows():
+        sentence = d.sentence
+        replaced_sentence = sentence
+        sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
+        
+        # 형태소 단위로 분리
+        okt = Okt()
+        words = [ss for ss in okt.morphs(sentence) if len(ss) > 1] # 2글자 이상 단어만
+        random_words = list(set([word for word in words]))
+        for random_word in random_words:
+            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+                random_words.remove(random_word)
+        random.shuffle(random_words)
+        
+        # 단어 랜덤 삭제
+        num_replaced = 0
+        replaced_indices = []
+        original_words, replaced_words = [], []
+        len_changes = []
+        for random_word in random_words:
+            match = re.search(r"[(){}\[\]<>]", random_word)
+            if match:
+                continue
+            replaced_index = replaced_sentence.find(random_word)
+            replaced_indices.append(replaced_index)
+
+            original_words.append(random_word)
+            replaced_words.append('')
+            replaced_sentence = replaced_sentence.replace(random_word, '', 1) # 중복 단어인 경우 1개만 삭제
+            if '  ' in replaced_sentence:
+                replaced_sentence = replaced_sentence.replace('  ', ' ') # 단어 삭제로 인한 이중 띄어쓰기 삭제
+                len_changes.append(-1 * (len(random_word) + 1))
+            else:
+                len_changes.append(-1 * len(random_word))
+            num_replaced += 1
+            
+            if num_replaced == n:
+                break
+            
+        # subject_entity와 object_entity의 index가 바뀌었으면 변경하여 저장
+        for replaced_index, len_change in zip(replaced_indices, len_changes):
+            if replaced_index < sbj_dict['start_idx']:
+                if replaced_index < obj_dict['start_idx']:
+                    sbj_dict['start_idx'] = sbj_dict['start_idx'] + len_change
+                    sbj_dict['end_idx'] = sbj_dict['end_idx'] + len_change
+                    obj_dict['start_idx'] = obj_dict['start_idx'] + len_change
+                    obj_dict['end_idx'] = obj_dict['end_idx'] + len_change
+                else:
+                    sbj_dict['start_idx'] = sbj_dict['start_idx'] + len_change
+                    sbj_dict['end_idx'] = sbj_dict['end_idx'] + len_change
+            else:
+                if replaced_index < obj_dict['start_idx']:
+                    obj_dict['start_idx'] = obj_dict['start_idx'] + len_change
+                    obj_dict['end_idx'] = obj_dict['end_idx'] + len_change
+                    
+        # 증강된 데이터 저장을 위해 dict 형태로 제작
+        if sentence != replaced_sentence:
+            replaced_dict['sentence'].append(replaced_sentence)
+            replaced_dict['id'].append(200000 + d.id) # 증강되어 추가된 데이터의 id는 기존 id + 200000 (RD)
+            replaced_dict['subject_entity'].append(str(sbj_dict))
+            replaced_dict['object_entity'].append(str(obj_dict))
+            replaced_dict['label'].append(d.label)
+            replaced_dict['source'].append(d.source)
+            replaced_dict['original'].append(original_words)
+            replaced_dict['replaced'].append(replaced_words)
+
+        # if idx == 9: # early stop for test
+        #     break
+
+        if (idx + 1) % 1000 == 0:
+            print(f'{idx + 1} data are preprocessed.')
+            
+    print('All data are preprocessed.')
+            
+    replaced_data = pd.DataFrame.from_dict(replaced_dict)
+    augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
+
+    return augmented_data
+
+
+def random_swap(data, n_pairs=1):
+    replaced_dict = defaultdict(list)
+    for idx, d in data.iterrows():
+        sentence = d.sentence
+        replaced_sentence = sentence
+        sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
+        
+        # 형태소 단위로 분리
+        okt = Okt()
+        words = [ss for ss in okt.nouns(sentence) if len(ss) > 1] # 2글자 이상 '명사' 단어만
+        random_words = list(set([word for word in words]))
+        for random_word in random_words:
+            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+                random_words.remove(random_word)
+        random.shuffle(random_words)
+        
+        # 단어 랜덤 스왑
+        num_replaced = 0
+        replaced_indices = []
+        original_words, replaced_words = [], []
+        len_changes = []
+        random_words_pairs = [[random_word1, random_word2] for random_word1, random_word2 in zip(random_words[:-1], random_words[1:])]
+        for random_words_pair in random_words_pairs:
+            random_word1, random_word2 = random_words_pair[0], random_words_pair[1]
+            replaced_index1, replaced_index2 = replaced_sentence.find(random_word1), replaced_sentence.find(random_word2)
+            if replaced_index1 > replaced_index2:
+                random_word1, random_word2 = random_word2, random_word1
+                replaced_index1, replaced_index2 = replaced_index2, replaced_index1
+            replaced_indices.extend([replaced_index1, replaced_index2])
+
+            original_words.extend([random_word1, random_word2])
+            replaced_words.extend([random_word2, random_word1])
+            len_changes.extend([len(random_word2) - len(random_word1), len(random_word1) - len(random_word2)])
+            replaced_sentence1 = replaced_sentence.replace(random_word1, random_word2, 1)
+            replaced_sentence2 = replaced_sentence.replace(random_word2, random_word1, 1)
+            replaced_sentence = replaced_sentence1[:replaced_index1 + len(random_word2) + 1] + replaced_sentence2[replaced_index1 + len(random_word2) + 1:]
+
+            num_replaced += 1
+            
+            if num_replaced == n_pairs:
+                break
+            
+        # subject_entity와 object_entity의 index가 바뀌었으면 변경하여 저장
+        for replaced_index, len_change in zip(replaced_indices, len_changes):
+            if replaced_index < sbj_dict['start_idx']:
+                if replaced_index < obj_dict['start_idx']:
+                    sbj_dict['start_idx'] = sbj_dict['start_idx'] + len_change
+                    sbj_dict['end_idx'] = sbj_dict['end_idx'] + len_change
+                    obj_dict['start_idx'] = obj_dict['start_idx'] + len_change
+                    obj_dict['end_idx'] = obj_dict['end_idx'] + len_change
+                else:
+                    sbj_dict['start_idx'] = sbj_dict['start_idx'] + len_change
+                    sbj_dict['end_idx'] = sbj_dict['end_idx'] + len_change
+            else:
+                if replaced_index < obj_dict['start_idx']:
+                    obj_dict['start_idx'] = obj_dict['start_idx'] + len_change
+                    obj_dict['end_idx'] = obj_dict['end_idx'] + len_change
+                    
+        # 증강된 데이터 저장을 위해 dict 형태로 제작
+        if sentence != replaced_sentence:
+            replaced_dict['sentence'].append(replaced_sentence)
+            replaced_dict['id'].append(300000 + d.id) # 증강되어 추가된 데이터의 id는 기존 id + 300000 (RS)
+            replaced_dict['subject_entity'].append(str(sbj_dict))
+            replaced_dict['object_entity'].append(str(obj_dict))
+            replaced_dict['label'].append(d.label)
+            replaced_dict['source'].append(d.source)
+            replaced_dict['original'].append(original_words)
+            replaced_dict['replaced'].append(replaced_words)
+
+        # if idx == 9: # early stop for test
+        #     break
+
+        if (idx + 1) % 1000 == 0:
+            print(f'{idx + 1} data are preprocessed.')
+            
+    print('All data are preprocessed.')
+            
+    replaced_data = pd.DataFrame.from_dict(replaced_dict)
+    augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
+
+    return augmented_data
+
+
+def random_insertion(data, n=1):
+    wordnet = {}
+    with open("wordnet.pickle", "rb") as f:
+        wordnet = pickle.load(f)
+        
+    replaced_dict = defaultdict(list)
+    for idx, d in data.iterrows():
+        sentence = d.sentence
+        replaced_sentence = sentence
+        sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
+        
+        # 형태소 단위로 분리
+        okt = Okt()
+        words = [ss for ss in okt.morphs(sentence) if len(ss) > 1] # 2글자 이상 단어만
+        random_words = list(set([word for word in words]))
+        for random_word in random_words:
+            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+                random_words.remove(random_word)
+        random.shuffle(random_words)
+        
+        # 단어 랜덤 삽입
+        num_replaced = 0
+        replaced_indices = []
+        original_words, replaced_words = [], []
+        len_changes = []
+        for random_word in random_words:
+            random1 = random.randint(0, len(wordnet) - 1)
+            random2 = random.randint(0, len(list(wordnet.values())[random1]) - 1)
+            inserted_word = list(wordnet.values())[random1][random2]
+            
+            replaced_index = replaced_sentence.find(random_word)
+            replaced_indices.append(replaced_index)
+
+            original_words.append('')
+            replaced_words.append(inserted_word)
+            len_changes.append(len(inserted_word) + 1)
+            replaced_sentence = replaced_sentence[:replaced_index] + inserted_word + ' ' + replaced_sentence[replaced_index:]
+            
+            num_replaced += 1
+            
+            if num_replaced == n:
+                break
+            
+        # subject_entity와 object_entity의 index가 바뀌었으면 변경하여 저장
+        for replaced_index, len_change in zip(replaced_indices, len_changes):
+            if replaced_index < sbj_dict['start_idx']:
+                if replaced_index < obj_dict['start_idx']:
+                    sbj_dict['start_idx'] = sbj_dict['start_idx'] + len_change
+                    sbj_dict['end_idx'] = sbj_dict['end_idx'] + len_change
+                    obj_dict['start_idx'] = obj_dict['start_idx'] + len_change
+                    obj_dict['end_idx'] = obj_dict['end_idx'] + len_change
+                else:
+                    sbj_dict['start_idx'] = sbj_dict['start_idx'] + len_change
+                    sbj_dict['end_idx'] = sbj_dict['end_idx'] + len_change
+            else:
+                if replaced_index < obj_dict['start_idx']:
+                    obj_dict['start_idx'] = obj_dict['start_idx'] + len_change
+                    obj_dict['end_idx'] = obj_dict['end_idx'] + len_change
+                    
+        # 증강된 데이터 저장을 위해 dict 형태로 제작
+        if sentence != replaced_sentence:
+            replaced_dict['sentence'].append(replaced_sentence)
+            replaced_dict['id'].append(400000 + d.id) # 증강되어 추가된 데이터의 id는 기존 id + 400000 (RI)
+            replaced_dict['subject_entity'].append(str(sbj_dict))
+            replaced_dict['object_entity'].append(str(obj_dict))
+            replaced_dict['label'].append(d.label)
+            replaced_dict['source'].append(d.source)
+            replaced_dict['original'].append(original_words)
+            replaced_dict['replaced'].append(replaced_words)
+
+        # if idx == 9: # early stop for test
+        #     break
+
+        if (idx + 1) % 1000 == 0:
+            print(f'{idx + 1} data are preprocessed.')
+            
+    print('All data are preprocessed.')
+            
+    replaced_data = pd.DataFrame.from_dict(replaced_dict)
+    augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
 
     return augmented_data
 
