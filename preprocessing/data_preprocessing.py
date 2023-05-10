@@ -2,10 +2,9 @@ import pandas as pd
 import re
 def clean_foreign_language(df):
   def clean_chinese(row):
-    # print("row: ",row)
-    foreign_regex = re.compile(r'([一-鿕]|[㐀-䶵]|[豈-龎])+')
+    # foreign_regex = re.compile(r'(([一-鿕]|[㐀-䶵]|[豈-龎])+)()')
+    foreign_regex = re.compile(r'(\({1}(([一-鿕]|[㐀-䶵]|[豈-龎])+)\){1})|((([一-鿕]|[㐀-䶵]|[豈-龎])+)\,{1}\s{1})')
     sentence = row['sentence']
-    # print(sentence)
     while(re.search(foreign_regex, row['sentence'])):
       # sentence 의 한자 제거
       start=re.search(foreign_regex, row['sentence']).span()[0]
