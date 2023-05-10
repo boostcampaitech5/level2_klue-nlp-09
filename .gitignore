@@ -209,9 +209,10 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,visualstudiocode,python
 
-# custom
+# log
 log/
 wandb/
+lightning_logs/
 
 
 .*
@@ -223,3 +224,15 @@ wandb/
 /results
 
 train_original.py
+
+# check points
+*.ckpt
+
+# model.pt
+*.pt
+
+# csv
+*.csv
+
+# nohup.out
+nohup.out
