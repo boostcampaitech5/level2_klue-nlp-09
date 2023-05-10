@@ -25,7 +25,7 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `no`: No evaluation during training.
                             # `steps`: Evaluate every `eval_steps`.
                             # `epoch`: Evaluate every end of epoch.
-eval_steps: 100  # evaluation step.
+eval_steps: 200  # evaluation step.
 load_best_model_at_end: True
 
 # save
