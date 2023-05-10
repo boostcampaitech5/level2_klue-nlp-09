@@ -10,7 +10,7 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 
-from utils import seed_everything, load_yaml
+from utils import seed_everything, load_yaml, load_yaml_type, concat
 
 
 def inference(model, tokenized_sent, device):
@@ -63,7 +63,7 @@ def load_test_dataset(dataset_dir, tokenizer):
     return test_dataset["id"], tokenized_test, test_label
 
 
-def main(args, config):
+def main(config):
     """
     주어진 dataset csv 파일과 같은 형태일 경우 inference 가능한 코드입니다.
     """
@@ -73,7 +73,7 @@ def main(args, config):
     tokenizer = AutoTokenizer.from_pretrained(Tokenizer_NAME)
 
     ## load my model
-    model_dir = args.model_dir  # model dir.
+    model_dir = f"./model/{config.type}/{config.inference_model_name}"
     model = AutoModelForSequenceClassification.from_pretrained(model_dir)
     model.parameters
     model.to(device)
@@ -97,7 +97,8 @@ def main(args, config):
             "probs": output_prob,
         }
     )
-    output.to_csv("./prediction/org.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    output_dir = f"./prediction/{config.type}.csv"
+    output.to_csv(output_dir, index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
     print("---- Finish! ----")
 
@@ -106,11 +107,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
     model_name = model_dict[0]
-    config = load_yaml(model_name)
-    seed_everything(config.seed)
-
-    # model dir
-    parser.add_argument("--model_dir", type=str, default="./model/org")
-    args = parser.parse_args()
-    print(args)
-    main(args, config)
+    model_types = ["PER", "ORG"]
+    for model_type in model_types:
+        config = load_yaml_type(model_name, model_type)
+        seed_everything(config.seed)
+        main(config)
+    concat()

@@ -21,7 +21,7 @@ from transformers import (
 from load_data import *
 
 import wandb
-from utils import seed_everything, load_yaml
+from utils import seed_everything, load_yaml, load_yaml_type
 
 
 def klue_re_micro_f1(preds, labels) -> float:
@@ -124,7 +124,7 @@ def train(config) -> None:
     tokenized_dev = tokenized_dataset(dev_dataset, tokenizer)
 
     # make dataset for pytorch.
-    RE_train_dataset = RE_Dataset_Sampler_30(tokenized_train, train_label)
+    RE_train_dataset = RE_Dataset(tokenized_train, train_label)
     RE_dev_dataset = RE_Dataset(tokenized_dev, dev_label)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -163,6 +163,8 @@ def train(config) -> None:
         evaluation_strategy=config.evaluation_strategy,  # evaluation strategy to adopt during training
         eval_steps=config.eval_steps,  # evaluation step.
         load_best_model_at_end=config.load_best_model_at_end,
+        metric_for_best_model = "micro f1 score",
+        greater_is_better = True,
         seed=config.seed,
     )
     trainer = Trainer(
@@ -173,19 +175,24 @@ def train(config) -> None:
         compute_metrics=compute_metrics,  # define metrics function
         optimizers=optimizer,  # define optimizer
         callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+        
     )
 
     # train model
     trainer.train()
-    model.save_pretrained(config.save_path)
+    trainer.save_model(f"./model/{config.type}/{config.type}-epoch_{int(trainer.state.epoch)}-micro f1 score_{trainer.state.best_metric:.2f}")
+    #model.save_pretrained(save_path)
+    wandb.finish()
 
 
 def main():
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
     model_name = model_dict[0]
-    config = load_yaml(model_name)
-    seed_everything(config.seed)
-    train(config)
+    model_types = ["PER", "ORG"]
+    for model_type in model_types:
+        config = load_yaml_type(model_name, model_type)
+        seed_everything(config.seed)
+        train(config)
 
 
 if __name__ == "__main__":

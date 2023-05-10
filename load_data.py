@@ -4,6 +4,18 @@ import pandas as pd
 import torch
 import re
 
+from collections import Counter
+
+def num_to_label(num: list) -> list:
+    """ 숫자로 된 라벨들을 다시 문자열 형태의 라벨로 변경합니다 """
+    str_label = []
+    with open("dict_num_to_label.pkl", "rb") as f:
+        dict_num_to_label = pickle.load(f)
+    for v in num:
+        str_label.append(dict_num_to_label[v])
+
+    return str_label
+
 class RE_Dataset(torch.utils.data.Dataset):
     """ Dataset 구성을 위한 class."""
 
