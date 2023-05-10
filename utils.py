@@ -48,7 +48,7 @@ def load_yaml(model_name: str) -> dict:
     # parser.add_argument("--entity", default=None)  # wandb team name
     # args = parser.parse_args()
 
-    with open(f"./config/{model_name}.yaml") as f:
+    with open(f"./config/{model_name}_binary.yaml") as f:
         config_dict = yaml.load(f, Loader=yaml.FullLoader)
     # with open(f"./config/klue_roberta_large.yaml") as f:
     #     config_dict = yaml.load(f, Loader=yaml.FullLoader)

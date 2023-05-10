@@ -30,7 +30,7 @@ eval_steps: 300  # evaluation step.
 load_best_model_at_end: True
 
 # inference
-inference_model_name: ORG-4.421768707482993-'micro f1 score'-66.24305003971406
+inference_model_name: ORG-epoch_9-micro f1 score_79.25
 
 # save
 save_path: ./model/per_
