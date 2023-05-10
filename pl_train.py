@@ -399,3 +399,4 @@ if __name__ == "__main__":
 
 # TODO: auprc, accuracy 적용
 # TODO: 기타 기능 적용
+# TODO: 얼리스탑핑 적용
