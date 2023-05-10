@@ -234,5 +234,5 @@ train_original.py
 # csv
 *.csv
 
-# nohup
+# nohup.out
 nohup.out
