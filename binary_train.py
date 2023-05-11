@@ -96,7 +96,7 @@ def train(config) -> None:
     tokenized_dev = tokenized_dataset(dev_dataset, tokenizer)
 
     # make dataset for pytorch.
-    RE_train_dataset = RE_Dataset(tokenized_train, train_label)
+    RE_train_dataset = RE_Dataset_Sampler_30(tokenized_train, train_label)
     RE_dev_dataset = RE_Dataset(tokenized_dev, dev_label)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -152,7 +152,7 @@ def train(config) -> None:
 
     # train model
     trainer.train()
-    trainer.save_model(f"./model/klue_bert_base_epoch_{int(trainer.state.epoch)}-micro f1 score_{trainer.state.best_metric:.2f}")
+    trainer.save_model(f"./model/binary_klue_bert_base_epoch_{int(trainer.state.epoch)}-micro f1 score_{trainer.state.best_metric:.2f}")
     #model.save_pretrained(save_path)
     wandb.finish()
 

@@ -4,7 +4,7 @@ model_name: klue/bert-base
 # data
 train_path: ../dataset/train/binary_train_90.csv
 dev_path: ../dataset/dev/binary_dev_10.csv
-predict_path: ../dataset/test/test.csv
+predict_path: ../dataset/test/test_data.csv
 
 # seed
 seed: 42
@@ -14,7 +14,7 @@ output_dir: ./results  # output directory
 save_total_limit: 5  # number of total save model.
 save_steps: 300  # model saving step.
 num_train_epochs: 10  # total number of training epochs
-learning_rate: 5e-6  # learning_rate
+learning_rate: 1e-6  # learning_rate
 per_device_train_batch_size: 16  # batch size per device during training
 per_device_eval_batch_size: 16  # batch size for evaluation
 warmup_steps: 0  # number of warmup steps for learning rate scheduler
@@ -30,7 +30,7 @@ eval_steps: 300  # evaluation step.
 load_best_model_at_end: True
 
 # inference
-inference_model_name: PER-5.396825396825397-'micro f1 score'-65.3688524590164
+inference_model_name: binary_klue_bert_base_epoch_3-micro f1 score_88.09
 
 # save
 save_path: ./model/per

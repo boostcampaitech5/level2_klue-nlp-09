@@ -1,6 +1,7 @@
 import random
 import torch
 import pandas as pd
+import re
 
 # import pytorch_lightning as pl
 import numpy as np
@@ -124,3 +125,60 @@ def concat():
   #sort_df = sort_df.iloc[:, 1:]
 
   sort_df.to_csv('./prediction/submission.csv')
+
+def concat_3():
+    per = pd.read_csv("./prediction/PER.csv")
+    org = pd.read_csv("./prediction/ORG.csv")
+    no_relation = pd.read_csv("./prediction/NO_RELATION.csv")
+
+    no_relation = no_relation.drop(columns=["Unnamed: 0"])
+    concat_df = pd.concat([per, org, no_relation], axis=0)
+
+    #concat_df = concat_df.reset_index(drop=True)
+    #concat_df.set_index('id', inplace=True)
+
+    if 6820 not in concat_df['id'].values:
+        no_relation = [1] + [0] * 29
+        new_data = pd.DataFrame({'id': [6820], 'pred_label': ['no_relation'], 'probs': [no_relation]})
+        concat_df = concat_df.append(new_data)
+
+    sort_df = concat_df.sort_values('id')
+    print(sort_df.head())
+    # sort_df = sort_df.drop('Unnamed: 0', axis=1)
+
+
+    #sort_df = sort_df.iloc[:, 1:]
+
+    sort_df.to_csv('./prediction/final_submission.csv')
+
+def post_submission(test, submission):
+    df = pd.read_csv(submission)
+
+    no_relation_df = df[df["pred_label"] == 0]
+    no_relation_df.loc[:, "pred_label"] = "no_relation"
+    no_relation_probs = [1] + [0] * 29
+
+    no_relation_df.loc[:, "probs"] = no_relation_df["probs"].apply(lambda x: no_relation_probs)
+    relation_ids = df[df["pred_label"] == 1]['id']
+
+    test_df = pd.read_csv(test)
+    relation_df = test_df[test_df["id"].isin(relation_ids)]
+
+    def get_type(sentence):
+        result = re.search(r"'type':\s*'(\w+)'", sentence)
+
+        return result.group(1)
+
+    relation_df.loc[:, 'type'] = relation_df['subject_entity'].apply(get_type)
+
+    grouped = relation_df.groupby("type")
+    group_list = dict()
+    for name, group in grouped:
+        group_list[name] = group
+
+    per = group_list["PER"]
+    org = group_list["ORG"]
+
+    no_relation_df.to_csv("./prediction/NO_RELATION.csv")
+    per.to_csv("../dataset/test/binary_test_per.csv")
+    org.to_csv("../dataset/test/binary_test_org.csv")
