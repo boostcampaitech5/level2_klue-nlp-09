@@ -61,7 +61,8 @@ predict_path: ../dataset/test/binary_test_per.csv
 inference_model_name: 사용하고자 하는 org 분류에 대한 모델
 ```
 
-4. 학습
+# 학습
+
 1. 모델 A 학습(binary 분류)
 ```
 python3 binary_train.py
