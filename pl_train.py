@@ -18,6 +18,7 @@ import numpy as np
 import wandb
 from utils import seed_everything, load_yaml
 import re
+from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
 
 
 class RE_Dataset(torch.utils.data.Dataset):
@@ -127,6 +128,17 @@ class Dataloader(pl.LightningDataModule):
             train_dataset = self.preprocessing(train_dataset)
             dev_dataset = self.preprocessing(dev_dataset)
 
+            #############################
+            cleaning_list = config.data_clean
+            augmentation_list = config.data_aug
+
+            sc = SC(cleaning_list)
+            sa = SA(augmentation_list)
+
+            train_dataset = sc.process(train_dataset)
+            train_dataset = sa.process(train_dataset)
+            ################################
+
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
 
@@ -205,7 +217,7 @@ def klue_re_micro_f1(preds, labels) -> float:
     label_indices = list(range(len(label_list)))
     label_indices.remove(no_relation_label_idx)
 
-    return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
+    return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices, zero_division=0) * 100.0
 
 
 def klue_re_auprc(probs, labels) -> float:
