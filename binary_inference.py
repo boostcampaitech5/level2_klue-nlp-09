@@ -147,15 +147,19 @@ if __name__ == "__main__":
     model_name = model_dict[0]
     config = load_yaml(model_name)
     seed_everything(config.seed)
+    # binary 분류 먼저 진행
     main(config)
 
     test_path = "../dataset/test/test_data.csv"
     binary_submission_path = "./prediction/binary_submission.csv"
     
+    # relation에 대한 세부적인 분류를 위한 파일을 post_submission을 통해 생성
     post_submission(test_path, binary_submission_path)
     model_types = ["PER", "ORG"]
+    # per, org 각각에 대한 분류 실행
     for model_type in model_types:
         config = load_yaml_type(model_name, model_type)
         seed_everything(config.seed)
         binary_main(config)
+    # no_relation, per, org csv를 하나로 concat한 final_submission.csv 생성
     concat_3()
