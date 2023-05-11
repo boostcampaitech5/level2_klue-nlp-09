@@ -32,9 +32,9 @@ def num_to_label(label):
 
 
 if __name__ == "__main__":
-    # model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    # model_name = model_dict[0]
-    model_name = "pl_test"
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
+    model_name = model_dict[1]
+    # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
     seed_everything(config.seed)
