@@ -27,13 +27,13 @@ level2_klue-nlp-09
 
 ## multi stage model 사용 방법
 # 모델: klue_bert_base
-1. klue_bert_base_binary.yaml 파일 다음과 같이 수정\n
-''' C
+1. klue_bert_base_binary.yaml 파일 다음과 같이 수정
+```
 data
 train_path: ../dataset/train/binary_train_90.csv
 dev_path: ../dataset/dev/binary_dev_10.csv
 predict_path: ../dataset/test/test_data.csv
-'''
+```
 ''' C
 inference
 inference_model_name: 사용하고자 하는 binary 분류에 대한 모델
