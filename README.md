@@ -63,8 +63,14 @@ inference_model_name: 사용하고자 하는 org 분류에 대한 모델
 
 4. 학습
 1. 모델 A 학습(binary 분류)
-  python3 binary_train.py
+```
+python3 binary_train.py
+```
 2. 모델 C(per 분류), D(org 분류) 학습
-  python3 train.py
+```
+python3 train.py
+```
 3. inference
-  python3 binary_inference.py
+```
+python3 binary_inference.py
+```
