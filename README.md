@@ -29,30 +29,37 @@ level2_klue-nlp-09
 # 모델: klue_bert_base
 1. klue_bert_base_binary.yaml 파일 다음과 같이 수정
 ```
-data
+# data
 train_path: ../dataset/train/binary_train_90.csv
 dev_path: ../dataset/dev/binary_dev_10.csv
 predict_path: ../dataset/test/test_data.csv
 ```
-''' C
-inference
+```
+# inference
 inference_model_name: 사용하고자 하는 binary 분류에 대한 모델
-'''
+```
 2. klue_bert_base_PER.yaml 파일 다음과 같이 수정
--  data
+```
+# data
 train_path: ../dataset/train/binary_train_per_90.csv
 dev_path: ../dataset/dev/binary_dev_per_10.csv
 predict_path: ../dataset/test/binary_test_per.csv
--  inference
+```
+```
+# inference
 inference_model_name: 사용하고자 하는 per 분류에 대한 모델
-
+```
 3. klue_bert_base_ORG.yaml 파일 다음과 같이 수정
--  data
+```
+# data
 train_path: ../dataset/train/binary_train_org_90.csv
 dev_path: ../dataset/dev/binary_dev_org_10.csv
 predict_path: ../dataset/test/binary_test_per.csv
--  inference
+```
+```
+# inference
 inference_model_name: 사용하고자 하는 org 분류에 대한 모델
+```
 
 4. 학습
 1. 모델 A 학습(binary 분류)
