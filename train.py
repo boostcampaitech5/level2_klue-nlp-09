@@ -192,7 +192,7 @@ def train(config) -> None:
 
 def main():
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[2]
+    model_name = model_dict[1]
     config = load_yaml(model_name)
     seed_everything(config.seed)
     train(config)

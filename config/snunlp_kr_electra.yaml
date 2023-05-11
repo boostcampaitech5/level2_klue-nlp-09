@@ -13,8 +13,8 @@ seed: 42
 output_dir: ./results  # output directory
 save_total_limit: 5  # number of total save model.
 save_steps: 500  # model saving step.
-num_train_epochs: 10  # total number of training epochs
-learning_rate: 1e-6  # learning_rate
+num_train_epochs: 30  # total number of training epochs
+learning_rate: 5e-6  # learning_rate
 per_device_train_batch_size: 96  # batch size per device during training
 per_device_eval_batch_size: 96  # batch size for evaluation
 warmup_steps: 300  # number of warmup steps for learning rate scheduler
@@ -29,14 +29,14 @@ eval_steps: 100  # evaluation step.
 load_best_model_at_end: True
 
 # lr scheduler
-lr_scheduler_step_size: 457
-lr_scheduler_gamma: 0.8
+lr_scheduler_step_size: 300
+lr_scheduler_gamma: 0.9
 
 # save
 save_path: ./best_model
 
 # wandb
-run_name: ksh_eda_aug_001
+run_name: ksh_eda_aug_002
 project_name: snunlp
 
 # data_clean:
