@@ -18,6 +18,7 @@ from transformers import (
     AdamW,
     EarlyStoppingCallback
 )
+from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
 from load_data import *
 
 import wandb
@@ -116,6 +117,17 @@ def train(config) -> None:
     train_dataset = load_data(config.train_path)
     dev_dataset = load_data(config.dev_path)
 
+    #############################
+    cleaning_list = config.data_clean
+    augmentation_list = config.data_aug
+    
+    sc = SC(cleaning_list)
+    sa = SA(augmentation_list)
+    
+    train_dataset = sc.process(train_dataset)
+    train_dataset = sa.process(train_dataset)
+    ################################
+
     train_label = label_to_num(train_dataset["label"].values)
     dev_label = label_to_num(dev_dataset["label"].values)
 
@@ -141,7 +153,8 @@ def train(config) -> None:
     model.to(device)
 
     # init optimizer
-    optimizer = (AdamW(model.parameters(), lr=config.learning_rate), None)
+    optimizer = AdamW(model.parameters(), lr=config.learning_rate)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=config.lr_scheduler_step_size, gamma=config.lr_scheduler_gamma)
 
     # init wandb logger
     wandb.init(project=config.project_name, name=config.run_name)
@@ -173,9 +186,8 @@ def train(config) -> None:
         train_dataset=RE_train_dataset,  # training dataset
         eval_dataset=RE_dev_dataset,  # evaluation dataset
         compute_metrics=compute_metrics,  # define metrics function
-        optimizers=optimizer,  # define optimizer
+        optimizers=(optimizer, scheduler),  # define optimizer
         callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
-        
     )
 
     # train model

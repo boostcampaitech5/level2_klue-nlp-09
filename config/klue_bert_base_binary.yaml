@@ -36,5 +36,5 @@ inference_model_name: binary_klue_bert_base_epoch_3-micro f1 score_88.09
 save_path: ./model/per
 
 # wandb
-run_name: per
+run_name: binary
 project_name: klue
