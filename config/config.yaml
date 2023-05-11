@@ -2,8 +2,8 @@
 model_name: klue/bert-base
 
 # data
-train_path: ./dataset/train/train_90.csv
-dev_path: ./dataset/dev/dev_10.csv
+train_path: ./dataset/train/train_aug_4eda_90_ksh.csv
+dev_path: ./dataset/dev/dev_aug_4eda_10_ksh.csv
 predict_path: ./dataset/test/test.csv
 
 # seed
@@ -13,29 +13,29 @@ seed: 42
 output_dir: ./results  # output directory
 save_total_limit: 5  # number of total save model.
 save_steps: 500  # model saving step.
-num_train_epochs: 1  # total number of training epochs
-learning_rate: 1e-6  # learning_rate
+num_train_epochs: 5  # total number of training epochs
+learning_rate: 5e-5  # learning_rate
 per_device_train_batch_size: 16  # batch size per device during training
 per_device_eval_batch_size: 16  # batch size for evaluation
-warmup_steps: 200  # number of warmup steps for learning rate scheduler
+warmup_steps: 500  # number of warmup steps for learning rate scheduler
 weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
-logging_steps: 100  # log saving step.
+logging_steps: 10  # log saving step.
 evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `no`: No evaluation during training.
                             # `steps`: Evaluate every `eval_steps`.
                             # `epoch`: Evaluate every end of epoch.
-eval_steps: 200  # evaluation step.
+eval_steps: 100  # evaluation step.
 load_best_model_at_end: True
 
 # save
 save_path: ./best_model
 
 # wandb
-run_name: test
+run_name: ksh_eda_aug_001
 project_name: klue
 
-data_clean:
-  - spellcheck
-data_aug:
-  - swap_text
+# data_clean:
+#   - spellcheck
+# data_aug:
+#   - swap_text

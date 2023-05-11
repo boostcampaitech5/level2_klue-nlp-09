@@ -1,5 +1,4 @@
 import pandas as pd
-<<<<<<< HEAD
 import random
 random.seed(42)
 import pickle
@@ -78,6 +77,16 @@ def synonym_replacement(data, n=2):
 
     for uk in useless_keys:
         del wordnet[uk]
+        
+    def get_synonyms(word):
+        synonyms = []
+        try:
+            for syn in wordnet[word]:
+                synonyms.append(syn)
+        except:
+            pass
+
+        return synonyms
 
     # synonym replacement 메인 
     replaced_dict = defaultdict(list)
@@ -147,23 +156,13 @@ def synonym_replacement(data, n=2):
         # if idx == 9: # early stop for test
         #     break
         
-        if (idx + 1) % 1000 == 0:
-            print(f'{idx + 1} data are preprocessed.')
+#         if (idx + 1) % 1000 == 0:
+#             print(f'{idx + 1} data are preprocessed.')
             
-    print('All data are preprocessed.')
+#     print('All data are preprocessed.')
             
     replaced_data = pd.DataFrame.from_dict(replaced_dict)
     augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
-
-    def get_synonyms(word):
-        synonyms = []
-        try:
-            for syn in wordnet[word]:
-                synonyms.append(syn)
-        except:
-            pass
-
-        return synonyms
 
     return augmented_data
 
@@ -239,10 +238,10 @@ def random_deletion(data, n=1):
         # if idx == 9: # early stop for test
         #     break
 
-        if (idx + 1) % 1000 == 0:
-            print(f'{idx + 1} data are preprocessed.')
+        # if (idx + 1) % 1000 == 0:
+        #     print(f'{idx + 1} data are preprocessed.')
             
-    print('All data are preprocessed.')
+    # print('All data are preprocessed.')
             
     replaced_data = pd.DataFrame.from_dict(replaced_dict)
     augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
@@ -322,10 +321,10 @@ def random_swap(data, n_pairs=1):
         # if idx == 9: # early stop for test
         #     break
 
-        if (idx + 1) % 1000 == 0:
-            print(f'{idx + 1} data are preprocessed.')
+#         if (idx + 1) % 1000 == 0:
+#             print(f'{idx + 1} data are preprocessed.')
             
-    print('All data are preprocessed.')
+#     print('All data are preprocessed.')
             
     replaced_data = pd.DataFrame.from_dict(replaced_dict)
     augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
@@ -406,10 +405,10 @@ def random_insertion(data, n=1):
         # if idx == 9: # early stop for test
         #     break
 
-        if (idx + 1) % 1000 == 0:
-            print(f'{idx + 1} data are preprocessed.')
+#         if (idx + 1) % 1000 == 0:
+#             print(f'{idx + 1} data are preprocessed.')
             
-    print('All data are preprocessed.')
+#     print('All data are preprocessed.')
             
     replaced_data = pd.DataFrame.from_dict(replaced_dict)
     augmented_data = pd.concat([data, replaced_data], axis=0, ignore_index=True)
