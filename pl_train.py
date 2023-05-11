@@ -38,7 +38,7 @@ class RE_Dataset(torch.utils.data.Dataset):
 
 
 class Dataloader(pl.LightningDataModule):
-    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path):
+    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path, data_clean, data_aug):
         super().__init__()
         self.model_name = model_name
         self.batch_size = batch_size
@@ -55,6 +55,9 @@ class Dataloader(pl.LightningDataModule):
         self.predict_dataset = None
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, max_length=256)
+
+        self.data_clean = data_clean
+        self.data_aug = data_aug
 
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
@@ -129,14 +132,14 @@ class Dataloader(pl.LightningDataModule):
             dev_dataset = self.preprocessing(dev_dataset)
 
             #############################
-            cleaning_list = config.data_clean
-            augmentation_list = config.data_aug
+            # cleaning_list = self.data_clean
+            # augmentation_list = self.data_aug
 
-            sc = SC(cleaning_list)
-            sa = SA(augmentation_list)
+            # sc = SC(cleaning_list)
+            # sa = SA(augmentation_list)
 
-            train_dataset = sc.process(train_dataset)
-            train_dataset = sa.process(train_dataset)
+            # train_dataset = sc.process(train_dataset)
+            # train_dataset = sa.process(train_dataset)
             ################################
 
             train_label = label_to_num(train_dataset["label"].values)
@@ -252,7 +255,7 @@ def compute_metrics(pred) -> dict:
 
 
 class Model(pl.LightningModule):
-    def __init__(self, model_name, lr, weight_decay, warmup_steps):
+    def __init__(self, model_name, lr, weight_decay, warmup_steps=None):
         super().__init__()
         self.save_hyperparameters()
 
@@ -349,7 +352,7 @@ class CustomModelCheckpoint(ModelCheckpoint):
             monitor_candidates = self._monitor_candidates(trainer)
             current = monitor_candidates.get(self.monitor)
             # added
-            if torch.isnan(current) or current < 65:
+            if torch.isnan(current) or current < 50:
                 return
             ###
             if self._every_n_epochs >= 1 and (trainer.current_epoch + 1) % self._every_n_epochs == 0:
@@ -374,7 +377,15 @@ if __name__ == "__main__":
 
     # # dataloader와 model을 생성합니다.
     dataloader = Dataloader(
-        config.model_name, config.per_device_train_batch_size, True, config.train_path, config.dev_path, config.dev_path, config.predict_path
+        config.model_name,
+        config.per_device_train_batch_size,
+        True,
+        config.train_path,
+        config.dev_path,
+        config.dev_path,
+        config.predict_path,
+        config.data_clean,
+        config.data_augmentation,
     )
 
     # total_steps = warmup_steps = None
