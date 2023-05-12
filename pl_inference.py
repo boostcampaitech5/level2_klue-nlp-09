@@ -16,6 +16,7 @@ import wandb
 from utils import seed_everything, load_yaml
 from pl_train import RE_Dataset, Dataloader, Model
 import torch.nn.functional as F
+import re
 
 
 def num_to_label(label):
@@ -32,16 +33,24 @@ def num_to_label(label):
 
 
 if __name__ == "__main__":
-    # model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    # model_name = model_dict[0]
-    model_name = "pl_test"
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
+    model_name = model_dict[1]
+    # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
     seed_everything(config.seed)
 
     # # dataloader와 model을 생성합니다.
     dataloader = Dataloader(
-        config.model_name, config.per_device_train_batch_size, True, config.train_path, config.dev_path, config.dev_path, config.predict_path
+        config.model_name,
+        config.per_device_train_batch_size,
+        config.shuffle,
+        config.train_path,
+        config.dev_path,
+        config.dev_path,
+        config.predict_path,
+        config.data_clean,
+        config.data_aug,
     )
 
     # total_steps = warmup_steps = None
@@ -49,7 +58,19 @@ if __name__ == "__main__":
     #     total_steps = (15900 // args.batch_size + (15900 % args.batch_size != 0)) * args.max_epoch
     #     warmup_steps = int((15900 // args.batch_size + (15900 % args.batch_size != 0)) * args.warm_up_ratio)
 
-    model = torch.load("model.pt")
+    # 예측할 모델 경로 설정
+    # pt 파일인 경우
+    # model_path = "model.pt"
+    # ckpt 파일인 경우
+    model_path = "./results/klue/roberta-large_0004_val_f1=64.4784.ckpt"
+    score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
+    # score = re.match(r"(?<==).*(?=(\.ckpt|\.pt))", model_path).group()
+
+    # 저장된 모델로 예측을 진행합니다.
+    if model_path.endswith(".pt"):
+        model = torch.load(model_path)
+    elif model_path.endswith(".ckpt"):
+        model = Model.load_from_checkpoint(model_path)
 
     # gpu가 없으면 accelerator='cpu', 있으면 accelerator='gpu'
     trainer = pl.Trainer(accelerator="gpu")  # GPU 사용
@@ -77,4 +98,4 @@ if __name__ == "__main__":
     output = pd.read_csv("~/code/prediction/sample_submission.csv")
     output["pred_label"] = pred_answer
     output["probs"] = output_prob
-    output.to_csv("submission.csv", index=False)
+    output.to_csv(f"prediction/{model_name}_f1_{score}.csv", index=False)

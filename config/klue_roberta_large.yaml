@@ -15,9 +15,9 @@ save_total_limit: 5  # number of total save model.
 save_steps: 500  # model saving step.
 num_train_epochs: 10  # total number of training epochs
 learning_rate: 5e-6  # learning_rate
-per_device_train_batch_size: 32  # batch size per device during training
-per_device_eval_batch_size: 32  # batch size for evaluation
-warmup_steps: 1000  # number of warmup steps for learning rate scheduler
+per_device_train_batch_size: 16  # batch size per device during training
+per_device_eval_batch_size: 16  # batch size for evaluation
+warmup_steps: 500  # number of warmup steps for learning rate scheduler
 weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
 logging_steps: 50  # log saving step.
@@ -27,6 +27,7 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `epoch`: Evaluate every end of epoch.
 eval_steps: 500  # evaluation step.
 load_best_model_at_end: True
+shuffle: True
 
 # lr scheduler
 lr_scheduler_step_size: 457
@@ -36,8 +37,8 @@ lr_scheduler_gamma: 0.9
 save_path: ./best_model/klue_roberta_large
 
 # wandb
-run_name: split_before_4eda_er2000_nrcut
-project_name: aug-test-klue-roberta-large
+run_name: v1_10e_16b_pl
+project_name: klue-roberta-large
 
 # data_clean:
 #   - spellcheck

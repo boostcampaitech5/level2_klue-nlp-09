@@ -27,6 +27,7 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `epoch`: Evaluate every end of epoch.
 eval_steps: 100  # evaluation step.
 load_best_model_at_end: True
+shuffle: True
 
 # lr scheduler
 lr_scheduler_step_size: 457
@@ -36,8 +37,13 @@ lr_scheduler_gamma: 0.9
 save_path: ./best_model/klue_bert_base
 
 # wandb
+<<<<<<< HEAD
 run_name: 4eda_er2000_nrcut
 project_name: aug-test-klue-bert-base
+=======
+run_name: v1_new_tokenizer
+project_name: klue-bert-base
+>>>>>>> b37332ff32fda01d8bb0f1f92867f5336882288b
 
 # data_clean:
 #   - spellcheck
