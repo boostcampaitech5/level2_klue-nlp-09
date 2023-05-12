@@ -2,15 +2,15 @@
 model_name: klue/roberta-large
 
 # data
-train_path: ../dataset/train/v1/train.csv
-dev_path: ../dataset/train/v1/dev.csv
-predict_path: ../dataset/test/test_data.csv
+train_path: ~/dataset/train/train_90_aug_4eda_er2000_nrcut_ksh.csv
+dev_path: ~/dataset/dev/dev_10_ksh.csv
+predict_path: ~/dataset/test/test_data.csv
 
 # seed
 seed: 42
 
 # train
-output_dir: ./results  # output directory
+output_dir: ./results/aug_test  # output directory
 save_total_limit: 5  # number of total save model.
 save_steps: 500  # model saving step.
 num_train_epochs: 10  # total number of training epochs
@@ -20,7 +20,7 @@ per_device_eval_batch_size: 16  # batch size for evaluation
 warmup_steps: 500  # number of warmup steps for learning rate scheduler
 weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
-logging_steps: 100  # log saving step.
+logging_steps: 50  # log saving step.
 evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `no`: No evaluation during training.
                             # `steps`: Evaluate every `eval_steps`.
@@ -34,13 +34,13 @@ lr_scheduler_step_size: 457
 lr_scheduler_gamma: 0.9
 
 # save
-save_path: ./best_model
+save_path: ./best_model/klue_roberta_large
 
 # wandb
 run_name: v1_10e_16b_pl
 project_name: klue-roberta-large
 
-data_clean:
-  - spellcheck
-data_aug:
-  - swap_text
+# data_clean:
+#   - spellcheck
+# data_aug:
+#   - swap_text

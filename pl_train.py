@@ -329,17 +329,11 @@ class Model(pl.LightningModule):
         if self.warmup_steps is not None:
             scheduler = transformers.get_inverse_sqrt_schedule(optimizer=optimizer, num_warmup_steps=self.warmup_steps)
             return (
-                [optimizer],
-                [
-                    {
-                        "scheduler": scheduler,
-                        "interval": "step",
-                        "frequency": 1,
-                        "reduce_on_plateau": False,
-                        "monitor": "val_loss",
-                    }
-                ],
-            )
+                [optimizer], [{"scheduler": scheduler,
+                               "interval": "step",
+                               "frequency": 1,
+                               "reduce_on_plateau": False,
+                               "monitor": "val_loss"}])
         # warmup stage 없는 경우
         else:
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.96)
@@ -430,7 +424,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "model.pt")
+    torch.save(model, "krb_4eda_er2000_nrcut.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용

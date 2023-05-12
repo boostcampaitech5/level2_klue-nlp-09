@@ -117,14 +117,14 @@ def train(config) -> None:
     dev_dataset = load_data(config.dev_path)
 
     #############################
-    cleaning_list = config.data_clean
-    augmentation_list = config.data_aug
+#     cleaning_list = config.data_clean
+#     augmentation_list = config.data_aug
     
-    sc = SC(cleaning_list)
-    sa = SA(augmentation_list)
+#     sc = SC(cleaning_list)
+#     sa = SA(augmentation_list)
     
-    train_dataset = sc.process(train_dataset)
-    train_dataset = sa.process(train_dataset)
+#     train_dataset = sc.process(train_dataset)
+#     train_dataset = sa.process(train_dataset)
     ################################
 
     train_label = label_to_num(train_dataset["label"].values)
@@ -192,7 +192,7 @@ def train(config) -> None:
 
 def main():
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[0]
+    model_name = model_dict[1]
     config = load_yaml(model_name)
     seed_everything(config.seed)
     train(config)
