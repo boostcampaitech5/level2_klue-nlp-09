@@ -1,5 +1,5 @@
 # model
-model_name: klue/bert-base
+model_name: timpal0l/mdeberta-v3-base-squad2
 
 # data
 train_path: ../dataset/train/train_js.csv
@@ -10,14 +10,14 @@ predict_path: ../dataset/test/test_data.csv
 seed: 42
 
 # train
-output_dir: ./results/bert  # output directory
+output_dir: ./results/mdeberta  # output directory
 save_total_limit: 1  # number of total save model.
 save_steps: 1000  # model saving step.
-num_train_epochs: 10  # total number of training epochs
+num_train_epochs: 5  # total number of training epochs
 learning_rate: 1e-5  # learning_rate
 per_device_train_batch_size: 16  # batch size per device during training
 per_device_eval_batch_size: 16  # batch size for evaluation
-warmup_steps: 200  # number of warmup steps for learning rate scheduler
+warmup_steps: 1000  # number of warmup steps for learning rate scheduler
 weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
 logging_steps: 100  # log saving step.
@@ -25,18 +25,18 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `no`: No evaluation during training.
                             # `steps`: Evaluate every `eval_steps`.
                             # `epoch`: Evaluate every end of epoch.
-eval_steps: 1000  # evaluation step.
-load_best_model_at_end: True
+eval_steps: 500  # evaluation step.
+load_best_model_at_end: False
 
 # lr scheduler
 lr_scheduler_step_size: 457
 lr_scheduler_gamma: 0.9
 
 # save
-save_path: ./best_model/bert
+save_path: ./best_model/mdeberta
 
 # wandb
-run_name: klue/bert-base
+run_name: mdeberta
 project_name: klue
 
 data_clean:

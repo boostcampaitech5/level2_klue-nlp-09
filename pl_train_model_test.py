@@ -258,16 +258,21 @@ class Model(pl.LightningModule):
         self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
         # Loss 계산을 위해 사용될 손실함수를 호출
         self.loss_func = torch.nn.CrossEntropyLoss()
+        # self.fc = torch.nn.Linear(768, 30)
 
     def forward(self, x):
         input_ids = x["input_ids"]
-        token_type_ids = x["token_type_ids"]
+        # token_type_ids = x["token_type_ids"]
         attention_mask = x["attention_mask"]
-        logits = self.plm(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)["logits"]
+        logits = self.plm(input_ids, attention_mask=attention_mask)["logits"]  # token_type_ids=token_type_ids, 
+        # last_hidden = self.plm(input_ids=input_ids, attention_mask=attention_mask)["last_hidden_state"]
+        # cls_hidden = last_hidden[:, 0, :]
+        # logits = self.fc(cls_hidden)
+        
         return logits
 
     def training_step(self, batch, batch_idx):
-        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        x = {"input_ids": batch["input_ids"], "attention_mask": batch["attention_mask"]}  # "token_type_ids": batch["token_type_ids"], 
         y = batch["labels"]
         logits = self(x)
         loss = self.loss_func(logits.float(), y)
@@ -281,11 +286,10 @@ class Model(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        x = {"input_ids": batch["input_ids"], "attention_mask": batch["attention_mask"]}  # "token_type_ids": batch["token_type_ids"], 
         y = batch["labels"]
 
         logits = self(x)
-
         loss = self.loss_func(logits.float(), y)
         self.log("val_loss", loss)
 
@@ -374,7 +378,7 @@ if __name__ == "__main__":
         max_epochs=config.num_train_epochs,  # 최대 epoch 수
         logger=wandb_logger,  # wandb logger 사용
         log_every_n_steps=1,  # 1 step마다 로그 기록
-        val_check_interval=0.25,  # 0.25 epoch마다 validation
+        val_check_interval=0.1,  # 0.25 epoch마다 validation
         check_val_every_n_epoch=1,  # val_check_interval의 기준이 되는 epoch 수
         callbacks=[
             # learning rate를 매 step마다 기록

@@ -17,7 +17,7 @@ from transformers import (
     BertTokenizerFast,
     AdamW,
 )
-from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
+# from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
 from load_data import *
 
 import wandb
@@ -110,26 +110,21 @@ def train(config) -> None:
     # MODEL_NAME = "bert-base-uncased"
     # MODEL_NAME = "klue/bert-base"
     MODEL_NAME = config.model_name
-    
-    # albert는 berttokenizerfast 사용
-    if MODEL_NAME == 'kykim/albert-kor-base':
-        tokenizer = BertTokenizerFast.from_pretrained(MODEL_NAME)
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
     # load dataset
     train_dataset = load_data(config.train_path)
     dev_dataset = load_data(config.dev_path)
 
     #############################
-    cleaning_list = config.data_clean
-    augmentation_list = config.data_aug
+    # cleaning_list = config.data_clean
+    # augmentation_list = config.data_aug
     
-    sc = SC(cleaning_list)
-    sa = SA(augmentation_list)
+    # sc = SC(cleaning_list)
+    # sa = SA(augmentation_list)
     
-    train_dataset = sc.process(train_dataset)
-    train_dataset = sa.process(train_dataset)
+    # train_dataset = sc.process(train_dataset)
+    # train_dataset = sa.process(train_dataset)
     ################################
 
     train_label = label_to_num(train_dataset["label"].values)
@@ -180,6 +175,8 @@ def train(config) -> None:
         eval_steps=config.eval_steps,  # evaluation step.
         load_best_model_at_end=config.load_best_model_at_end,
         seed=config.seed,
+        metric_for_best_model = "micro f1 score",  # select best f1 score
+        greater_is_better = True
     )
     trainer = Trainer(
         model=model,  # the instantiated 🤗 Transformers model to be trained
@@ -192,7 +189,8 @@ def train(config) -> None:
 
     # train model
     trainer.train()
-    model.save_pretrained(config.save_path)
+    # model.save_pretrained(config.save_path)
+    trainer.save_model(f"{config.save_path}/-epoch_{int(trainer.state.epoch)}-micro f1 score_{trainer.state.best_metric:.2f}")  # loss 기준
     wandb.finish()
 
 
@@ -203,5 +201,5 @@ def main(model_name):
 
 
 if __name__ == "__main__":
-    main(model_name = 'hyunwoongko_kobart')
+    main(model_name = 'cino_large')
 

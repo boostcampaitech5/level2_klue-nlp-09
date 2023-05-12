@@ -1,16 +1,16 @@
 # model
-model_name: klue/bert-base
+model_name: hyunwoongko/kobart
 
 # data
-train_path: ../dataset/train/v1/train.csv
-dev_path: ../dataset/train/v1/dev.csv
-predict_path: ../dataset/test/test_data.csv
+train_path: ../dataset/train/train_js.csv
+dev_path: ../dataset/dev/dev_js.csv
+predict_path: ../dataset/test_data.csv
 
 # seed
 seed: 42
 
 # train
-output_dir: ./results  # output directory
+output_dir: ./results/kobart  # output directory
 save_total_limit: 5  # number of total save model.
 save_steps: 500  # model saving step.
 num_train_epochs: 1  # total number of training epochs
@@ -29,8 +29,8 @@ eval_steps: 100  # evaluation step.
 load_best_model_at_end: True
 
 # save
-save_path: ./best_model
+save_path: ./best_model/kobart
 
 # wandb
-run_name: compare_test_pl
-project_name: pl_test
+run_name: pl
+project_name: klue

@@ -4,7 +4,7 @@ model_name: klue/roberta-large
 # data
 train_path: ../dataset/train/train_js.csv
 dev_path: ../dataset/dev/dev_js.csv
-predict_path: ../dataset/test_data.csv
+predict_path: ../dataset/test/test_data.csv
 
 # seed
 seed: 42

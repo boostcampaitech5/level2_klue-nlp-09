@@ -1,5 +1,4 @@
 import pandas as pd
-<<<<<<< HEAD
 import random
 random.seed(42)
 import pickle

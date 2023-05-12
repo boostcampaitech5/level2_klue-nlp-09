@@ -25,7 +25,7 @@ def inference(model, tokenized_sent, device):
     for i, data in enumerate(tqdm(dataloader)):
         with torch.no_grad():
             outputs = model(
-                input_ids=data["input_ids"].to(device), attention_mask=data["attention_mask"].to(device), token_type_ids=data["token_type_ids"].to(device)
+                input_ids=data["input_ids"].to(device), attention_mask=data["attention_mask"].to(device)  #token_type_ids=data["token_type_ids"].to(device), 
             )
         logits = outputs[0]
         prob = F.softmax(logits, dim=-1).detach().cpu().numpy()
@@ -97,20 +97,19 @@ def main(args, config):
             "probs": output_prob,
         }
     )
-    output.to_csv("./prediction/submission.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    output.to_csv("./prediction/submission_mluke.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
     print("---- Finish! ----")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    model_name = model_dict[2]
+    model_name = "mluke-large-lite"
     config = load_yaml(model_name)
     seed_everything(config.seed)
 
     # model dir
-    parser.add_argument("--model_dir", type=str, default="./best_model/bert_base/10epoch")
+    parser.add_argument("--model_dir", type=str, default="/opt/ml/level2_klue-nlp-09/best_model/mluke/-epoch_5-micro f1 score_85.62")
     args = parser.parse_args()
     print(args)
     main(args, config)
