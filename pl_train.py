@@ -329,7 +329,7 @@ class Model(pl.LightningModule):
 if __name__ == "__main__":
     # model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
     # model_name = model_dict[0]
-    model_name = "pl_test"
+    model_name = "klue_roberta_large"
     config = load_yaml(model_name)
     # set seed
     seed_everything(config.seed)
@@ -374,7 +374,7 @@ if __name__ == "__main__":
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            #     EarlyStopping("val_pearson", patience=8, mode="max", check_finite=False),  # validation pearson이 8번 이상 개선되지 않으면 학습을 종료
+                EarlyStopping("val_loss", patience=8, mode="min", check_finite=False),  # validation pearson이 8번 이상 개선되지 않으면 학습을 종료
             #     CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )
@@ -388,7 +388,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "model.pt")
+    torch.save(model, "krl_split_before_4eda_er2000_nrcut.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용

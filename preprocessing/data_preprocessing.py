@@ -416,6 +416,83 @@ def random_insertion(data, n=1):
     return augmented_data
 
 
+def entity_replacement(data, threshold=1000, entity='subject'):
+                    
+    def ent2df(data):
+        sbj_dict = data.subject_entity
+        obj_dict = data.object_entity
+        sbj_dd, obj_dd = defaultdict(list), defaultdict(list)
+        for sd, od in zip(sbj_dict, obj_dict):
+            sd, od = eval(sd), eval(od)
+            for (sd_key, sd_value), (od_key, od_value) in zip(sd.items(), od.items()):
+                sbj_dd[sd_key].append(sd_value)
+                obj_dd[od_key].append(od_value)
+                
+        sbj_df, obj_df = pd.DataFrame.from_dict(sbj_dd), pd.DataFrame.from_dict(obj_dd)
+        
+        return sbj_df, obj_df
+
+    def change_entity(row_data, entity='subject'):
+        ent_dict = eval(row_data[entity + '_entity'])
+        sentence = row_data.sentence
+        original_ent = ent_dict['word']
+        replaced_ent = original_ent
+        while replaced_ent == original_ent:
+            sbj_df_same_type = sbj_df[sbj_df.type == ent_dict['type']]
+            replaced_ent = random.sample(list(sbj_df_same_type.word), 1)[0]
+        
+        replaced_sentence = sentence.replace(original_ent, replaced_ent)
+        replaced_ent_dict = ent_dict.copy()
+        replaced_ent_dict['word']  = replaced_ent
+        replaced_ent_dict['start_idx'] = ent_dict['start_idx'] + (len(replaced_ent) - len(original_ent)) * sentence[:ent_dict['start_idx']].count(original_ent)
+        replaced_ent_dict['end_idx'] = ent_dict['end_idx'] + (len(replaced_ent) - len(original_ent)) * (sentence[:ent_dict['start_idx']].count(original_ent) + 1)
+        
+        other_entity = 'object' if entity == 'subject' else 'subject'
+        other_ent_dict = eval(row_data[other_entity + '_entity'])
+        replaced_other_ent_dict = other_ent_dict.copy()
+        if other_ent_dict['start_idx'] > ent_dict['start_idx']:
+            replaced_other_ent_dict['start_idx'] = other_ent_dict['start_idx'] + (len(replaced_ent) - len(original_ent)) * sentence[:other_ent_dict['start_idx']].count(original_ent)
+            replaced_other_ent_dict['end_idx'] = other_ent_dict['end_idx'] + (len(replaced_ent) - len(original_ent)) * sentence[:other_ent_dict['start_idx']].count(original_ent)
+            
+        replaced_row_data = {}
+        replaced_row_data['id'] = 500000 + row_data.id
+        replaced_row_data['sentence'] = replaced_sentence
+        replaced_row_data[entity + '_entity'] = str(replaced_ent_dict)
+        replaced_row_data[other_entity + '_entity'] = str(replaced_other_ent_dict)
+        replaced_row_data['label'] = row_data.label
+        replaced_row_data['source'] = row_data.source
+        replaced_row_data['original'] = original_ent
+        replaced_row_data['replaced'] = replaced_ent
+        replaced_row_data = pd.DataFrame.from_dict(replaced_row_data, orient='index').T
+        
+        return replaced_row_data
+    
+    sbj_df, obj_df = ent2df(data)
+    augmented_data = pd.DataFrame()
+    data_label_count = data.label.value_counts()
+    for key in dict(data_label_count).keys():
+        label_data = data[data.label == key]
+        label_data = label_data.sample(frac=1.0).reset_index(drop=True)
+        if len(label_data) < threshold:
+            for idx, ld in label_data.iterrows():
+                replaced_ld = change_entity(ld, entity='subject')
+                label_data = pd.concat([label_data, replaced_ld], ignore_index=True)
+
+                if len(label_data) == threshold:
+                    break
+                    
+                # if idx == 9:
+                #     break
+
+        augmented_data = pd.concat([augmented_data, label_data], ignore_index=True)
+        
+        print(f'[{key}] {data_label_count[key]} -> {augmented_data.label.value_counts()[key]}')
+    
+    print('All data are preprocessed.')
+    
+    return augmented_data
+
+
 if  __name__ == "__main__":
     df = pd.read_csv("../dataset/train/v1/train.csv")
     foreign_regex = re.compile(r'([一-鿕]|[㐀-䶵]|[豈-龎])+') 
