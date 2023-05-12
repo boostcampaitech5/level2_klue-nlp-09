@@ -437,9 +437,10 @@ def entity_replacement(data, threshold=1000, entity='subject'):
         sentence = row_data.sentence
         original_ent = ent_dict['word']
         replaced_ent = original_ent
+        tgt_df = sbj_df if entity == 'subject' else obj_df
         while replaced_ent == original_ent:
-            sbj_df_same_type = sbj_df[sbj_df.type == ent_dict['type']]
-            replaced_ent = random.sample(list(sbj_df_same_type.word), 1)[0]
+            tgt_df_same_type = tgt_df[tgt_df.type == ent_dict['type']]
+            replaced_ent = random.sample(list(tgt_df_same_type.word), 1)[0]
         
         replaced_sentence = sentence.replace(original_ent, replaced_ent)
         replaced_ent_dict = ent_dict.copy()

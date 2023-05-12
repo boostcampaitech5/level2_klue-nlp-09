@@ -2,8 +2,8 @@
 model_name: klue/bert-base
 
 # data
-train_path: ../dataset/train/train_aug_4eda_90_ksh.csv
-dev_path: ../dataset/dev/dev_aug_4eda_10_ksh.csv
+train_path: ../dataset/train/train_90_aug_4eda_er2000_nrcut_ksh.csv
+dev_path: ../dataset/dev/dev_10_ksh.csv
 predict_path: ../dataset/test/test.csv
 
 # seed
@@ -33,11 +33,11 @@ lr_scheduler_step_size: 457
 lr_scheduler_gamma: 0.9
 
 # save
-save_path: ./best_model/
+save_path: ./best_model/klue_bert_base
 
 # wandb
-run_name: ksh_eda_aug_001
-project_name: klue
+run_name: 4eda_er2000_nrcut
+project_name: aug-test-klue-bert-base
 
 # data_clean:
 #   - spellcheck
