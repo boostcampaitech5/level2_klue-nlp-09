@@ -27,6 +27,7 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `epoch`: Evaluate every end of epoch.
 eval_steps: 200  # evaluation step.
 load_best_model_at_end: True
+shuffle: True
 
 # lr scheduler
 lr_scheduler_step_size: 457

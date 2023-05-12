@@ -18,6 +18,7 @@ import numpy as np
 import wandb
 from utils import seed_everything, load_yaml
 import re
+from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
 
 
 class RE_Dataset(torch.utils.data.Dataset):
@@ -37,7 +38,7 @@ class RE_Dataset(torch.utils.data.Dataset):
 
 
 class Dataloader(pl.LightningDataModule):
-    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path):
+    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path, data_clean, data_aug):
         super().__init__()
         self.model_name = model_name
         self.batch_size = batch_size
@@ -54,9 +55,9 @@ class Dataloader(pl.LightningDataModule):
         self.predict_dataset = None
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, max_length=256)
-        # self.target_columns = ["label"]
-        # self.delete_columns = ["id"]
-        # self.text_columns = ["sentence_1", "sentence_2"]
+
+        self.data_clean = data_clean
+        self.data_aug = data_aug
 
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
@@ -129,6 +130,17 @@ class Dataloader(pl.LightningDataModule):
 
             train_dataset = self.preprocessing(train_dataset)
             dev_dataset = self.preprocessing(dev_dataset)
+
+            #############################
+            # cleaning_list = self.data_clean
+            # augmentation_list = self.data_aug
+
+            # sc = SC(cleaning_list)
+            # sa = SA(augmentation_list)
+
+            # train_dataset = sc.process(train_dataset)
+            # train_dataset = sa.process(train_dataset)
+            ################################
 
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
@@ -208,7 +220,7 @@ def klue_re_micro_f1(preds, labels) -> float:
     label_indices = list(range(len(label_list)))
     label_indices.remove(no_relation_label_idx)
 
-    return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
+    return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices, zero_division=0) * 100.0
 
 
 def klue_re_auprc(probs, labels) -> float:
@@ -243,7 +255,7 @@ def compute_metrics(pred) -> dict:
 
 
 class Model(pl.LightningModule):
-    def __init__(self, model_name, lr, weight_decay, warmup_steps):
+    def __init__(self, model_name, lr, weight_decay, warmup_steps=None):
         super().__init__()
         self.save_hyperparameters()
 
@@ -258,13 +270,15 @@ class Model(pl.LightningModule):
         self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
         # Loss 계산을 위해 사용될 손실함수를 호출
         self.loss_func = torch.nn.CrossEntropyLoss()
+        self.dropout = torch.nn.Dropout(0.3)
 
     def forward(self, x):
         input_ids = x["input_ids"]
         token_type_ids = x["token_type_ids"]
         attention_mask = x["attention_mask"]
         logits = self.plm(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)["logits"]
-
+        # dropout
+        # logits = self.dropout(logits)
         return logits
 
     def training_step(self, batch, batch_idx):
@@ -332,10 +346,24 @@ class Model(pl.LightningModule):
             return [optimizer], [scheduler]
 
 
+class CustomModelCheckpoint(ModelCheckpoint):
+    def on_validation_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        if not self._should_skip_saving_checkpoint(trainer) and not self._should_save_on_train_epoch_end(trainer):
+            monitor_candidates = self._monitor_candidates(trainer)
+            current = monitor_candidates.get(self.monitor)
+            # added
+            if torch.isnan(current) or current < 50:
+                return
+            ###
+            if self._every_n_epochs >= 1 and (trainer.current_epoch + 1) % self._every_n_epochs == 0:
+                self._save_topk_checkpoint(trainer, monitor_candidates)
+            self._save_last_checkpoint(trainer, monitor_candidates)
+
+
 if __name__ == "__main__":
-    # model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra"}
-    # model_name = model_dict[0]
-    model_name = "pl_test"
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
+    model_name = model_dict[1]
+    # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
     seed_everything(config.seed)
@@ -349,7 +377,15 @@ if __name__ == "__main__":
 
     # # dataloader와 model을 생성합니다.
     dataloader = Dataloader(
-        config.model_name, config.per_device_train_batch_size, True, config.train_path, config.dev_path, config.dev_path, config.predict_path
+        config.model_name,
+        config.per_device_train_batch_size,
+        config.shuffle,
+        config.train_path,
+        config.dev_path,
+        config.dev_path,
+        config.predict_path,
+        config.data_clean,
+        config.data_aug,
     )
 
     # total_steps = warmup_steps = None
@@ -375,13 +411,13 @@ if __name__ == "__main__":
         max_epochs=config.num_train_epochs,  # 최대 epoch 수
         logger=wandb_logger,  # wandb logger 사용
         log_every_n_steps=1,  # 1 step마다 로그 기록
-        val_check_interval=0.25,  # 0.25 epoch마다 validation
+        val_check_interval=0.5,  # 0.5 epoch마다 validation
         check_val_every_n_epoch=1,  # val_check_interval의 기준이 되는 epoch 수
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            #     EarlyStopping("val_pearson", patience=8, mode="max", check_finite=False),  # validation pearson이 8번 이상 개선되지 않으면 학습을 종료
-            #     CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
+            EarlyStopping("val_f1", patience=5, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )
 
@@ -399,3 +435,4 @@ if __name__ == "__main__":
 
 # TODO: auprc, accuracy 적용
 # TODO: 기타 기능 적용
+# TODO: 얼리스탑핑 적용
