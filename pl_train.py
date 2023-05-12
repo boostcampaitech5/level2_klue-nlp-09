@@ -379,13 +379,13 @@ if __name__ == "__main__":
     dataloader = Dataloader(
         config.model_name,
         config.per_device_train_batch_size,
-        True,
+        config.shuffle,
         config.train_path,
         config.dev_path,
         config.dev_path,
         config.predict_path,
         config.data_clean,
-        config.data_augmentation,
+        config.data_aug,
     )
 
     # total_steps = warmup_steps = None
