@@ -138,12 +138,12 @@ class Dataloader(pl.LightningDataModule):
 
         else:
             # 평가데이터 준비
-            test_dataset = load_data_entity(self.test_path, punct)
+            test_dataset = self.load_data_entity(self.test_path, punct)
             test_label = label_to_num(test_dataset["label"].values)
             tokenized_test = self.tokenized_dataset_entity(test_dataset, self.tokenizer)
             self.test_dataset = RE_Dataset(tokenized_test, test_label)
 
-            predict_dataset = load_data_entity(self.predict_path, punct)
+            predict_dataset = self.load_data_entity(self.predict_path, punct)
             predict_label = predict_dataset["label"].values
             tokenized_predict = self.tokenized_dataset_entity(predict_dataset, self.tokenizer)
             self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)
