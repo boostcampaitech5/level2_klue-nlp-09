@@ -73,11 +73,11 @@ class Dataloader(pl.LightningDataModule):
     
         return tokenized_sentences
 
-    def load_data_entity_punct(self, dataset_dir):
+    def load_data_entity(self, dataset_dir, punct=True):
         """ csv 파일을 경로에 맞게 불러오고 sentence에 punct를 추가합니다. """
         pd_dataset = pd.read_csv(dataset_dir)
         pdt = preprocessing_dataset_TypedEntityMarker()
-        dataset = pdt.attach_TypedEntityMarker(pd_dataset, punct=True)
+        dataset = pdt.attach_TypedEntityMarker(pd_dataset, punct)
         
         return dataset
 
@@ -93,8 +93,9 @@ class Dataloader(pl.LightningDataModule):
 
         if stage == "fit" or stage is None:
             # 학습 데이터와 검증 데이터셋을 호출합니다
-            train_dataset = self.load_data_entity_punct(self.train_path)
-            dev_dataset = self.load_data_entity_punct(self.dev_path)
+            # punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
+            train_dataset = self.load_data_entity(self.train_path, punct=True)
+            dev_dataset = self.load_data_entity(self.dev_path, punct=True)
 
             #############################
             # cleaning_list = self.data_clean
