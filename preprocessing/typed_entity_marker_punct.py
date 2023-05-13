@@ -23,6 +23,7 @@ class preprocessing_dataset_TypedEntityMarker:
         """
         sentence에 subject와 object word 전후에 typed entity marker를 추가합니다.
         """
+        print("NOTICE: Typed Entity Marker without Punct activated")
         subject_end = int(subject_end)
         object_end = int(object_end)
         subject_start = int(subject_start)
@@ -46,6 +47,7 @@ class preprocessing_dataset_TypedEntityMarker:
         """
         sentence에 subject와 object word 전후에 typed entity marker punct를 추가합니다.
         """
+        print("NOTICE: Typed Entity Marker with Punct activated")
         subject_end = int(subject_end)
         object_end = int(object_end)
         subject_start = int(subject_start)
