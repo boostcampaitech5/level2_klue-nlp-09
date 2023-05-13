@@ -21,7 +21,7 @@ if __name__ == "__main__":
     sweep_config = {
         "method": "random",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
-            "learning_rate": {"values": [5e-5, 3e-5, 1e-5, 7e-6, 5e-6, 3e-6 1e-6]},
+            "learning_rate": {"values": [5e-5, 3e-5, 1e-5, 7e-6, 5e-6, 3e-6, 1e-6]},
             "max_epoch": {"values": [10, 15]},
             "batch_size": {"values": [16, 32]},
             "model_name": {
