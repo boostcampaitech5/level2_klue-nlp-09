@@ -5,12 +5,14 @@ model_name: skt/kogpt2-base-v2
 train_path: ~/dataset/train/train_90_ksh.csv
 dev_path: ~/dataset/dev/dev_10_ksh.csv
 predict_path: ~/dataset/test/test_data.csv
+shuffle: True
+tem: "none" # typed entity marker: "none", "non_punct", "punct"
+# tem_punct: False # typed entity marker with punctuation
 
 # seed
 seed: 42
 
 # train
-shuffle: True
 output_dir: ./results/skt_kogpt2  # output directory
 save_total_limit: 2  # number of total save model.
 save_steps: 500  # model saving step.
@@ -22,7 +24,7 @@ per_device_eval_batch_size: 64  # batch size for evaluation
 warmup_steps: 1000  # number of warmup steps for learning rate scheduler
 weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
-logging_steps: 20  # log saving step.
+logging_steps: 10  # log saving step.
 evaluation_strategy: steps  # evaluation strategy to adopt during training
                             # `no`: No evaluation during training.
                             # `steps`: Evaluate every `eval_steps`.
@@ -34,5 +36,5 @@ load_best_model_at_end: True
 save_path: ./best_model/skt_kogpt2
 
 # wandb
-run_name: kogpt2_standard
-project_name: kogpt2
+run_name: test
+project_name: sweep_kogpt2

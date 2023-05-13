@@ -44,11 +44,16 @@ class RE_Dataset(torch.utils.data.Dataset):
 
 
 class Dataloader(pl.LightningDataModule):
-    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path): #, data_clean, data_aug):
+    def __init__(self, model_name, batch_size, shuffle, tem, train_path, dev_path, test_path, predict_path): #, data_clean, data_aug):
         super().__init__()
         self.model_name = model_name
         self.batch_size = batch_size
         self.shuffle = shuffle
+        self.tem = tem # typed entity marker
+        if self.tem == "punct":
+            self.tem_punct = True # typed entity marker - punctuation
+        else: # self.tem == "non_punct"
+            self.tem_punct = False # can be true only when tem is true
 
         self.train_path = train_path
         self.dev_path = dev_path
@@ -69,21 +74,31 @@ class Dataloader(pl.LightningDataModule):
 
         ########################### LDH/typed_entity_marker ################################
         # punct를 사용하지 않는 typed entity marker를 추가합니다 bert-base 사용
-        self.tokenizer.add_special_tokens({'additional_special_tokens' : [
-            '<S:PER>', '</S:PER>', '<S:ORG>', '</S:ORG>',
-            '<O:PER>', '</O:PER>', '<O:ORG>', '</O:ORG>',
-            '<O:DAT>', '</O:DAT>', '<O:LOC>', '</O:LOC>',
-            '<O:NOH>', '</O:NOH>', '<O:POH>', '</O:POH>']
-            })
+        self.tokenizer.add_special_tokens(
+                {'additional_special_tokens': [
+                    '<S:PER>', '</S:PER>', '<S:ORG>', '</S:ORG>',
+                    '<O:PER>', '</O:PER>', '<O:ORG>', '</O:ORG>',
+                    '<O:DAT>', '</O:DAT>', '<O:LOC>', '</O:LOC>',
+                    '<O:NOH>', '</O:NOH>', '<O:POH>', '</O:POH>'
+                    ]
+                }
+            )
 
         # punct에 해당하는 special token을 추가합니다 roberta-large 사용
-        self.tokenizer.add_special_tokens({'additional_special_tokens' : [
-            '* PER *', '* ORG *',
-            '^ PER ^', '^ ORG ^', '^ DAT ^', '^ LOC ^', '^ NOH ^', '^ POH ^']
-            })
+        self.tokenizer.add_special_tokens(
+                {'additional_special_tokens': [
+                    '* PER *', '* ORG *',
+                    '^ PER ^', '^ ORG ^', 
+                    '^ DAT ^', 
+                    '^ LOC ^', 
+                    '^ NOH ^', 
+                    '^ POH ^'
+                    ]
+                }
+            )
 
-        self.data_clean = data_clean
-        self.data_aug = data_aug
+        # self.data_clean = data_clean
+        # self.data_aug = data_aug
 
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
@@ -105,9 +120,9 @@ class Dataloader(pl.LightningDataModule):
 
         return tokenized_sentences
 
-    def tokenized_dataset_entity(self, dataset, tokenizer):
+    def tokenizing_dataset_entity(self, dataset):
         """ tokenizer에 따라 sentence를 tokenizing 합니다."""
-        tokenized_sentences = tokenizer(
+        tokenized_sentences = self.tokenizer(
             list(dataset["sentence"]), 
             return_tensors="pt", 
             padding=True, 
@@ -120,18 +135,56 @@ class Dataloader(pl.LightningDataModule):
     
         return tokenized_sentences
 
-    def load_data_entity(self, dataset_dir, punct=True):
+    def load_data_entity(self, dataset_dir):
         """ csv 파일을 경로에 맞게 불러오고 sentence에 punct를 추가합니다. """
-        if punct:
-            print("NOTICE: Typed Entity Marker with Punct activated")
-        else:
-            print("NOTICE: Typed Entity Marker without Punct activated")
+        if self.tem:
+            print("NOTICE: Typed Entity Marker activated")
+            if self.tem_punct:
+                print("Typed Entity Marker: with Punct")
+            else:
+                print("Typed Entity Marker: without Punct")
 
         pd_dataset = pd.read_csv(dataset_dir)
-        pdt = preprocessing_dataset_TypedEntityMarker()
-        dataset = pdt.attach_TypedEntityMarker(pd_dataset, punct)
+        pd_dataset_tem = preprocessing_dataset_TypedEntityMarker()
+        out_dataset = pd_dataset_tem.attach_TypedEntityMarker(pd_dataset, self.tem_punct)
         
-        return dataset
+        return out_dataset
+    
+    def preprocessing(self, dataset):
+        """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
+
+        def get_word_new(sentence):
+            # ?는 non-greedy matching
+            result = re.search(r"'word': '(.+?)'", sentence)
+            if result == None:
+                result = re.search(r"'word': \"(.+?)\"", sentence)
+            result = result.group(1).strip('"')
+            match = re.search(r"\B'\b|\b'\B", result[:-1])
+            if match:
+                pass
+            else:
+                result = result.strip("'")
+            # result = "'" + result + "'"
+            return result
+
+        subject_entity = []
+        object_entity = []
+        for i, j in zip(dataset["subject_entity"], dataset["object_entity"]):
+            i = get_word_new(i)
+            j = get_word_new(j)
+
+            subject_entity.append(i)
+            object_entity.append(j)
+        out_dataset = pd.DataFrame(
+            {
+                "id": dataset["id"],
+                "sentence": dataset["sentence"],
+                "subject_entity": subject_entity,
+                "object_entity": object_entity,
+                "label": dataset["label"],
+            }
+        )
+        return out_dataset
 
     def setup(self, stage=None):
         def label_to_num(label: list) -> list:
@@ -143,12 +196,17 @@ class Dataloader(pl.LightningDataModule):
 
             return num_label
         
-        # punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
-        punct = True
+        # self.tem_punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
         if stage == "fit" or stage is None:
             # 학습 데이터와 검증 데이터셋을 호출합니다
-            train_dataset = self.load_data_entity(self.train_path, punct)
-            dev_dataset = self.load_data_entity(self.dev_path, punct)
+            if self.tem == "non_punct" or self.tem == "punct":
+                train_dataset = self.load_data_entity(self.train_path)
+                dev_dataset = self.load_data_entity(self.dev_path)
+            else:
+                train_dataset = pd.read_csv(self.train_path)
+                train_dataset = self.preprocessing(train_dataset)
+                dev_dataset = pd.read_csv(self.dev_path)
+                dev_dataset = self.preprocessing(dev_dataset)
 
             print(train_dataset['sentence'].iloc[0])
             #############################
@@ -165,8 +223,8 @@ class Dataloader(pl.LightningDataModule):
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
 
-            tokenized_train = self.tokenized_dataset_entity(train_dataset, self.tokenizer)
-            tokenized_dev = self.tokenized_dataset_entity(dev_dataset, self.tokenizer)
+            tokenized_train = self.tokenizing_dataset_entity(train_dataset)
+            tokenized_dev = self.tokenizing_dataset_entity(dev_dataset)
 
             # 학습데이터 준비
             # self.train_inputs, self.train_targets = self.preprocessing(train_data)
@@ -177,15 +235,28 @@ class Dataloader(pl.LightningDataModule):
 
         else:
             # 평가데이터 준비
-            test_dataset = self.load_data_entity(self.test_path, punct)
-            test_label = label_to_num(test_dataset["label"].values)
-            tokenized_test = self.tokenized_dataset_entity(test_dataset, self.tokenizer)
-            self.test_dataset = RE_Dataset(tokenized_test, test_label)
+            if self.tem == "non_punct" or self.tem == "punct":
+                test_dataset = self.load_data_entity(self.test_path)
+                test_label = label_to_num(test_dataset["label"].values)
+                tokenized_test = self.tokenizing_dataset_entity(test_dataset)
+                self.test_dataset = RE_Dataset(tokenized_test, test_label)
 
-            predict_dataset = self.load_data_entity(self.predict_path, punct)
-            predict_label = predict_dataset["label"].values
-            tokenized_predict = self.tokenized_dataset_entity(predict_dataset, self.tokenizer)
-            self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)
+                predict_dataset = self.load_data_entity(self.predict_path)
+                predict_label = predict_dataset["label"].values
+                tokenized_predict = self.tokenizing_dataset_entity(predict_dataset)
+                self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)
+            else:
+                test_dataset = pd.read_csv(self.test_path)
+                test_dataset = self.preprocessing(test_dataset)
+                test_label = label_to_num(test_dataset["label"].values)
+                tokenized_test = self.tokenizing(test_dataset)
+                self.test_dataset = RE_Dataset(tokenized_test, test_label)
+
+                predict_dataset = pd.read_csv(self.predict_path)
+                predict_dataset = self.preprocessing(predict_dataset)
+                predict_label = predict_dataset["label"].values
+                tokenized_predict = self.tokenizing(predict_dataset)
+                self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle)
@@ -292,7 +363,7 @@ class Model(pl.LightningModule):
 
         # Loss 계산을 위해 사용될 손실함수를 호출
         self.loss_func = torch.nn.CrossEntropyLoss()
-        # self.dropout = torch.nn.Dropout()
+        # self.dropout = torch.nn.Dropout(0.2)
 
     def forward(self, x):
         input_ids = x["input_ids"]
@@ -348,7 +419,7 @@ class Model(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         # warmup stage 있는 경우
-        if self.warmup_steps is not None:
+        if self.warmup_steps:
             scheduler = transformers.get_inverse_sqrt_schedule(optimizer=optimizer, num_warmup_steps=self.warmup_steps)
             return (
                 [optimizer], [{"scheduler": scheduler,
@@ -393,13 +464,14 @@ if __name__ == "__main__":
 
     # # dataloader와 model을 생성합니다.
     dataloader = Dataloader(
-        config.model_name,
-        config.per_device_train_batch_size,
-        config.shuffle,
-        config.train_path,
-        config.dev_path,
-        config.dev_path,
-        config.predict_path,
+        model_name=config.model_name,
+        batch_size=config.per_device_train_batch_size,
+        shuffle=config.shuffle,
+        tem=config.tem,
+        train_path=config.train_path,
+        dev_path=config.dev_path,
+        test_path=config.dev_path,
+        predict_path=config.predict_path,
         # config.data_clean,
         # config.data_aug,
     )
@@ -412,9 +484,9 @@ if __name__ == "__main__":
     vocab_size = len(dataloader.tokenizer)
     model = Model(
         model_name=config.model_name,
-        learning_rate=config.learning_rate,
+        lr=config.learning_rate,
         weight_decay=config.weight_decay,
-        voacb_size=vocab_size,
+        vocab_size=vocab_size,
         dropout=config.dropout,
         warmup_steps=config.warmup_steps
     )
@@ -429,13 +501,13 @@ if __name__ == "__main__":
         # reload_dataloaders_every_n_epochs=1,
         max_epochs=config.num_train_epochs,  # 최대 epoch 수
         logger=wandb_logger,  # wandb logger 사용
-        log_every_n_steps=1,  # 1 step마다 로그 기록
+        log_every_n_steps=config.logging_steps,  # 특정 step마다 로그 기록
         val_check_interval=0.5,  # 0.5 epoch마다 validation
         check_val_every_n_epoch=1,  # val_check_interval의 기준이 되는 epoch 수
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            EarlyStopping("val_loss", patience=4, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            EarlyStopping("val_loss", patience=6, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
             # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )
