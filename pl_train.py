@@ -56,7 +56,15 @@ class Dataloader(pl.LightningDataModule):
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, max_length=256)
 
-        # punct에 해당하는 special token을 추가합니다
+        # punct를 사용하지 않는 typed entity marker를 추가합니다 bert-base 사용
+        self.tokenizer.add_special_tokens({'additional_special_tokens' : [
+            '<S:PER>', '</S:PER>', '<S:ORG>', '</S:ORG>',
+            '<O:PER>', '</O:PER>', '<O:ORG>', '</O:ORG>',
+            '<O:DAT>', '</O:DAT>', '<O:LOC>', '</O:LOC>',
+            '<O:NOH>', '</O:NOH>', '<O:POH>', '</O:POH>']
+            })
+
+        # punct에 해당하는 special token을 추가합니다 roberta-large 사용
         self.tokenizer.add_special_tokens({'additional_special_tokens' : [
             '* PER *', '* ORG *',
             '^ PER ^', '^ ORG ^', '^ DAT ^', '^ LOC ^', '^ NOH ^', '^ POH ^']
