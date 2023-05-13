@@ -17,9 +17,9 @@ if __name__ == "__main__":
     sweep_config = {
         "method": "random",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
-            "learning_rate": {"values": [1e-5, 7e-6, 5e-6, 3e-6, 1e-6]},
-            "max_epoch": {"values": [5, 10, 15, 20]},
-            "batch_size": {"values": [8, 16, 32]},
+            "learning_rate": {"values": [5e-5, 3e-5, 1e-5, 7e-6, 5e-6, 3e-6, 1e-6]},
+            "max_epoch": {"values": [10, 15]},
+            "batch_size": {"values": [16, 32]},
             "model_name": {
                 "values": [
                     args.model_name,
@@ -31,9 +31,10 @@ if __name__ == "__main__":
                     # 'skt/kogpt2-base-v2'
                 ]
             },
-            'warm_up_ratio':{
-                'values':[0.3, 0.45, 0.6]
-            },
+            #  'warm_up_ratio':{
+            #      'values':[0, 0.05, 0.1]
+            #  },
+            "warmup_steps": {"values": [None, 500, 1000]},
             "weight_decay": {"values": [0, 0.01]},
             # "loss_func": {"values": ["L1"]},
         },
@@ -74,10 +75,14 @@ if __name__ == "__main__":
                 args.data_clean,
                 args.data_aug,
             )
+
+            vocab_size = len(dataloader.tokenizer)
             model = Model(
                 config.model_name,
                 config.learning_rate,
                 config.weight_decay,
+                vocab_size,
+                config.warmup_steps,
                 # args.warmup_steps,
             )
 

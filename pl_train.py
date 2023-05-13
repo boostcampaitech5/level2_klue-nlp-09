@@ -25,6 +25,7 @@ import re
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
+from preprocessing.typed_entity_marker_punct import preprocessing_dataset_TypedEntityMarker
 
 class RE_Dataset(torch.utils.data.Dataset):
     """Dataset 구성을 위한 class."""
@@ -66,6 +67,24 @@ class Dataloader(pl.LightningDataModule):
         # self.data_clean = data_clean
         # self.data_aug = data_aug
 
+        ########################### LDH/typed_entity_marker ################################
+        # punct를 사용하지 않는 typed entity marker를 추가합니다 bert-base 사용
+        self.tokenizer.add_special_tokens({'additional_special_tokens' : [
+            '<S:PER>', '</S:PER>', '<S:ORG>', '</S:ORG>',
+            '<O:PER>', '</O:PER>', '<O:ORG>', '</O:ORG>',
+            '<O:DAT>', '</O:DAT>', '<O:LOC>', '</O:LOC>',
+            '<O:NOH>', '</O:NOH>', '<O:POH>', '</O:POH>']
+            })
+
+        # punct에 해당하는 special token을 추가합니다 roberta-large 사용
+        self.tokenizer.add_special_tokens({'additional_special_tokens' : [
+            '* PER *', '* ORG *',
+            '^ PER ^', '^ ORG ^', '^ DAT ^', '^ LOC ^', '^ NOH ^', '^ POH ^']
+            })
+
+        self.data_clean = data_clean
+        self.data_aug = data_aug
+
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
         concat_entity = []
@@ -83,43 +102,36 @@ class Dataloader(pl.LightningDataModule):
             add_special_tokens=True,
             return_token_type_ids=True
         )
+
         return tokenized_sentences
 
-    def preprocessing(self, dataset):
-        """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
-
-        def get_word_new(sentence):
-            # ?는 non-greedy matching
-            result = re.search(r"'word': '(.+?)'", sentence)
-            if result == None:
-                result = re.search(r"'word': \"(.+?)\"", sentence)
-            result = result.group(1).strip('"')
-            match = re.search(r"\B'\b|\b'\B", result[:-1])
-            if match:
-                pass
-            else:
-                result = result.strip("'")
-            # result = "'" + result + "'"
-            return result
-
-        subject_entity = []
-        object_entity = []
-        for i, j in zip(dataset["subject_entity"], dataset["object_entity"]):
-            i = get_word_new(i)
-            j = get_word_new(j)
-
-            subject_entity.append(i)
-            object_entity.append(j)
-        out_dataset = pd.DataFrame(
-            {
-                "id": dataset["id"],
-                "sentence": dataset["sentence"],
-                "subject_entity": subject_entity,
-                "object_entity": object_entity,
-                "label": dataset["label"],
-            }
+    def tokenized_dataset_entity(self, dataset, tokenizer):
+        """ tokenizer에 따라 sentence를 tokenizing 합니다."""
+        tokenized_sentences = tokenizer(
+            list(dataset["sentence"]), 
+            return_tensors="pt", 
+            padding=True, 
+            truncation=True, 
+            max_length=256, 
+            add_special_tokens=True,
+            return_token_type_ids=True
         )
-        return out_dataset
+        ######################################################################################
+    
+        return tokenized_sentences
+
+    def load_data_entity(self, dataset_dir, punct=True):
+        """ csv 파일을 경로에 맞게 불러오고 sentence에 punct를 추가합니다. """
+        if punct:
+            print("NOTICE: Typed Entity Marker with Punct activated")
+        else:
+            print("NOTICE: Typed Entity Marker without Punct activated")
+
+        pd_dataset = pd.read_csv(dataset_dir)
+        pdt = preprocessing_dataset_TypedEntityMarker()
+        dataset = pdt.attach_TypedEntityMarker(pd_dataset, punct)
+        
+        return dataset
 
     def setup(self, stage=None):
         def label_to_num(label: list) -> list:
@@ -130,15 +142,15 @@ class Dataloader(pl.LightningDataModule):
                 num_label.append(dict_label_to_num[v])
 
             return num_label
-
+        
+        # punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
+        punct = True
         if stage == "fit" or stage is None:
             # 학습 데이터와 검증 데이터셋을 호출합니다
-            train_dataset = pd.read_csv(self.train_path)
-            dev_dataset = pd.read_csv(self.dev_path)
+            train_dataset = self.load_data_entity(self.train_path, punct)
+            dev_dataset = self.load_data_entity(self.dev_path, punct)
 
-            train_dataset = self.preprocessing(train_dataset)
-            dev_dataset = self.preprocessing(dev_dataset)
-
+            print(train_dataset['sentence'].iloc[0])
             #############################
             # cleaning_list = self.data_clean
             # augmentation_list = self.data_aug
@@ -153,8 +165,8 @@ class Dataloader(pl.LightningDataModule):
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
 
-            tokenized_train = self.tokenizing(train_dataset)
-            tokenized_dev = self.tokenizing(dev_dataset)
+            tokenized_train = self.tokenized_dataset_entity(train_dataset, self.tokenizer)
+            tokenized_dev = self.tokenized_dataset_entity(dev_dataset, self.tokenizer)
 
             # 학습데이터 준비
             # self.train_inputs, self.train_targets = self.preprocessing(train_data)
@@ -165,16 +177,14 @@ class Dataloader(pl.LightningDataModule):
 
         else:
             # 평가데이터 준비
-            test_dataset = pd.read_csv(self.test_path)
-            test_dataset = self.preprocessing(test_dataset)
+            test_dataset = self.load_data_entity(self.test_path, punct)
             test_label = label_to_num(test_dataset["label"].values)
-            tokenized_test = self.tokenizing(test_dataset)
+            tokenized_test = self.tokenized_dataset_entity(test_dataset, self.tokenizer)
             self.test_dataset = RE_Dataset(tokenized_test, test_label)
 
-            predict_dataset = pd.read_csv(self.predict_path)
-            predict_dataset = self.preprocessing(predict_dataset)
+            predict_dataset = self.load_data_entity(self.predict_path, punct)
             predict_label = predict_dataset["label"].values
-            tokenized_predict = self.tokenizing(predict_dataset)
+            tokenized_predict = self.tokenized_dataset_entity(predict_dataset, self.tokenizer)
             self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)
 
     def train_dataloader(self):
