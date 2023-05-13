@@ -18,7 +18,7 @@ import numpy as np
 import wandb
 from utils import seed_everything, load_yaml
 import re
-from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
+#from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
 
 
 class RE_Dataset(torch.utils.data.Dataset):
@@ -361,8 +361,8 @@ class CustomModelCheckpoint(ModelCheckpoint):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
-    model_name = model_dict[1]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
+    model_name = model_dict[4]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
