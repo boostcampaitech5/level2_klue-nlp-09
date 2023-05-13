@@ -12,8 +12,8 @@ from utils import seed_everything, load_yaml
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
-    model_name = model_dict[1]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
+    model_name = model_dict[4]
     args = load_yaml(model_name)
 
     # HP Tuning
@@ -21,9 +21,9 @@ if __name__ == "__main__":
     sweep_config = {
         "method": "random",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
-            "learning_rate": {"values": [1e-5, 7e-6, 5e-6, 3e-6, 1e-6]},
-            "max_epoch": {"values": [5, 10, 15, 20]},
-            "batch_size": {"values": [8, 16, 32]},
+            "learning_rate": {"values": [5e-5, 3e-5, 1e-5, 7e-6, 5e-6, 3e-6 1e-6]},
+            "max_epoch": {"values": [10, 15]},
+            "batch_size": {"values": [16, 32]},
             "model_name": {
                 "values": [
                     args.model_name,
@@ -34,9 +34,10 @@ if __name__ == "__main__":
                     # 'snunlp/KR-ELECTRA-discriminator'
                 ]
             },
-            # 'warm_up_ratio':{
-            #     'values':[0.3, 0.45, 0.6]
-            # },
+            #  'warm_up_ratio':{
+            #      'values':[0, 0.05, 0.1]
+            #  },
+            "warmup_steps": {"values": [None, 500, 1000]},
             "weight_decay": {"values": [0, 0.01]},
             # "loss_func": {"values": ["L1"]},
         },
@@ -81,6 +82,7 @@ if __name__ == "__main__":
                 config.model_name,
                 config.learning_rate,
                 config.weight_decay,
+                config.warmup_steps,
                 # args.warmup_steps,
             )
 
