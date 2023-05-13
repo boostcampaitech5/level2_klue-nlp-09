@@ -18,7 +18,12 @@ import numpy as np
 import wandb
 from utils import seed_everything, load_yaml
 import re
-from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
+# from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
+
+# import os
+# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
 
 class RE_Dataset(torch.utils.data.Dataset):
@@ -38,7 +43,7 @@ class RE_Dataset(torch.utils.data.Dataset):
 
 
 class Dataloader(pl.LightningDataModule):
-    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path, data_clean, data_aug):
+    def __init__(self, model_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path): #, data_clean, data_aug):
         super().__init__()
         self.model_name = model_name
         self.batch_size = batch_size
@@ -55,9 +60,11 @@ class Dataloader(pl.LightningDataModule):
         self.predict_dataset = None
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, max_length=256)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-        self.data_clean = data_clean
-        self.data_aug = data_aug
+        # self.data_clean = data_clean
+        # self.data_aug = data_aug
 
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
@@ -74,6 +81,7 @@ class Dataloader(pl.LightningDataModule):
             truncation=True,
             max_length=256,
             add_special_tokens=True,
+            return_token_type_ids=True
         )
         return tokenized_sentences
 
@@ -255,22 +263,26 @@ def compute_metrics(pred) -> dict:
 
 
 class Model(pl.LightningModule):
-    def __init__(self, model_name, lr, weight_decay, warmup_steps=None):
+    def __init__(self, model_name, lr, weight_decay, vocab_size, dropout, warmup_steps=None):
         super().__init__()
         self.save_hyperparameters()
 
         self.model_name = model_name
         self.lr = lr
         self.weight_decay = weight_decay
+        self.dropout = torch.nn.Dropout(dropout)
         self.warmup_steps = warmup_steps
 
         self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
         self.model_config.num_labels = 30
+
         # 사용할 모델을 호출
         self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
+        self.plm.resize_token_embeddings(vocab_size)
+
         # Loss 계산을 위해 사용될 손실함수를 호출
         self.loss_func = torch.nn.CrossEntropyLoss()
-        self.dropout = torch.nn.Dropout(0.3)
+        # self.dropout = torch.nn.Dropout()
 
     def forward(self, x):
         input_ids = x["input_ids"]
@@ -278,7 +290,7 @@ class Model(pl.LightningModule):
         attention_mask = x["attention_mask"]
         logits = self.plm(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)["logits"]
         # dropout
-        # logits = self.dropout(logits)
+        logits = self.dropout(logits)
         return logits
 
     def training_step(self, batch, batch_idx):
@@ -355,8 +367,8 @@ class CustomModelCheckpoint(ModelCheckpoint):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
-    model_name = model_dict[1]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "skt_kogpt2"}
+    model_name = model_dict[4]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -378,8 +390,8 @@ if __name__ == "__main__":
         config.dev_path,
         config.dev_path,
         config.predict_path,
-        config.data_clean,
-        config.data_aug,
+        # config.data_clean,
+        # config.data_aug,
     )
 
     # total_steps = warmup_steps = None
@@ -387,11 +399,14 @@ if __name__ == "__main__":
     #     total_steps = (15900 // args.batch_size + (15900 % args.batch_size != 0)) * args.max_epoch
     #     warmup_steps = int((15900 // args.batch_size + (15900 % args.batch_size != 0)) * args.warm_up_ratio)
 
+    vocab_size = len(dataloader.tokenizer)
     model = Model(
-        config.model_name,
-        config.learning_rate,
-        config.weight_decay,
-        config.warmup_steps,
+        model_name=config.model_name,
+        learning_rate=config.learning_rate,
+        weight_decay=config.weight_decay,
+        voacb_size=vocab_size,
+        dropout=config.dropout,
+        warmup_steps=config.warmup_steps
     )
 
     # model = torch.load('model.pt')
@@ -410,7 +425,7 @@ if __name__ == "__main__":
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            EarlyStopping("val_f1", patience=5, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            EarlyStopping("val_loss", patience=4, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
             # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )
@@ -424,7 +439,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "krb_4eda_er2000_nrcut.pt")
+    torch.save(model, "kogpt2_test_run.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용

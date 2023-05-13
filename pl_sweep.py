@@ -1,19 +1,15 @@
+import wandb
 import argparse
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping
-
-import wandb
 from pytorch_lightning.loggers import WandbLogger
-
-
 from pl_train import Model, Dataloader, CustomModelCheckpoint
-
 from utils import seed_everything, load_yaml
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
-    model_name = model_dict[1]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "skt_kogpt2"}
+    model_name = model_dict[4]
     args = load_yaml(model_name)
 
     # HP Tuning
@@ -31,16 +27,17 @@ if __name__ == "__main__":
                     # 'monologg/koelectra-base-v3-discriminator',
                     # 'beomi/KcELECTRA-base',
                     # 'rurupang/roberta-base-finetuned-sts',
-                    # 'snunlp/KR-ELECTRA-discriminator'
+                    # 'snunlp/KR-ELECTRA-discriminator',
+                    # 'skt/kogpt2-base-v2'
                 ]
             },
-            # 'warm_up_ratio':{
-            #     'values':[0.3, 0.45, 0.6]
-            # },
+            'warm_up_ratio':{
+                'values':[0.3, 0.45, 0.6]
+            },
             "weight_decay": {"values": [0, 0.01]},
             # "loss_func": {"values": ["L1"]},
         },
-        "metric": {"name": "val_f1", "goal": "maximize"},
+        "metric": {"name": "val_loss", "goal": "minimize"},
     }
 
     # set version to save model
@@ -97,7 +94,7 @@ if __name__ == "__main__":
                 callbacks=[
                     # learning rate를 매 step마다 기록
                     LearningRateMonitor(logging_interval="step"),
-                    EarlyStopping("val_f1", patience=5, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+                    EarlyStopping("val_loss", patience=6, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
                     CustomModelCheckpoint(  # validation f1이 기준보다 높으면 저장
                         "./results/", f"{args.model_name}_{next(ver):0>4}_{{val_f1:.4f}}", monitor="val_f1", save_top_k=1, mode="max"
                     ),

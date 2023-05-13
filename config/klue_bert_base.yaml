@@ -10,11 +10,13 @@ predict_path: ../dataset/test/test.csv
 seed: 42
 
 # train
+shuffle: True
 output_dir: ./results  # output directory
 save_total_limit: 1  # number of total save model.
 save_steps: 500  # model saving step.
 num_train_epochs: 5  # total number of training epochs
 learning_rate: 5e-5  # learning_rate
+dropout: 0.2
 per_device_train_batch_size: 16  # batch size per device during training
 per_device_eval_batch_size: 16  # batch size for evaluation
 warmup_steps: 500  # number of warmup steps for learning rate scheduler
@@ -37,13 +39,8 @@ lr_scheduler_gamma: 0.9
 save_path: ./best_model/klue_bert_base
 
 # wandb
-<<<<<<< HEAD
-run_name: 4eda_er2000_nrcut
-project_name: aug-test-klue-bert-base
-=======
 run_name: v1_new_tokenizer
 project_name: klue-bert-base
->>>>>>> b37332ff32fda01d8bb0f1f92867f5336882288b
 
 # data_clean:
 #   - spellcheck
