@@ -19,7 +19,7 @@ import wandb
 from utils import seed_everything, load_yaml
 import re
 #from preprocessing.process_manipulator import SequentialCleaning as SC, SequentialAugmentation as SA
-from preprocessing.typed_entity_marker_punct import preprocessing_dataset_TypedEntityMarker, tokenized_dataset_entity, load_data_entity_punct
+from preprocessing.typed_entity_marker_punct import preprocessing_dataset_TypedEntityMarker
 
 class RE_Dataset(torch.utils.data.Dataset):
     """Dataset 구성을 위한 class."""
@@ -83,6 +83,11 @@ class Dataloader(pl.LightningDataModule):
 
     def load_data_entity(self, dataset_dir, punct=True):
         """ csv 파일을 경로에 맞게 불러오고 sentence에 punct를 추가합니다. """
+        if punct:
+            print("NOTICE: Typed Entity Marker with Punct activated")
+        else:
+            print("NOTICE: Typed Entity Marker without Punct activated")
+
         pd_dataset = pd.read_csv(dataset_dir)
         pdt = preprocessing_dataset_TypedEntityMarker()
         dataset = pdt.attach_TypedEntityMarker(pd_dataset, punct)
@@ -102,9 +107,11 @@ class Dataloader(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             # 학습 데이터와 검증 데이터셋을 호출합니다
             # punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
-            train_dataset = self.load_data_entity(self.train_path, punct=True)
-            dev_dataset = self.load_data_entity(self.dev_path, punct=True)
+            punct = True
+            train_dataset = self.load_data_entity(self.train_path, punct)
+            dev_dataset = self.load_data_entity(self.dev_path, punct)
 
+            print(train_dataset['sentence'].iloc[0])
             #############################
             # cleaning_list = self.data_clean
             # augmentation_list = self.data_aug
