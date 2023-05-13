@@ -103,11 +103,11 @@ class Dataloader(pl.LightningDataModule):
                 num_label.append(dict_label_to_num[v])
 
             return num_label
-
+        
+        # punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
+        punct = True
         if stage == "fit" or stage is None:
             # 학습 데이터와 검증 데이터셋을 호출합니다
-            # punct=False이면 punct를 사용하지 않는 Typed Entity Marker가 적용됩니다.
-            punct = True
             train_dataset = self.load_data_entity(self.train_path, punct)
             dev_dataset = self.load_data_entity(self.dev_path, punct)
 
@@ -138,12 +138,12 @@ class Dataloader(pl.LightningDataModule):
 
         else:
             # 평가데이터 준비
-            test_dataset = load_data_entity_punct(self.test_path)
+            test_dataset = load_data_entity(self.test_path, punct)
             test_label = label_to_num(test_dataset["label"].values)
             tokenized_test = self.tokenized_dataset_entity(test_dataset, self.tokenizer)
             self.test_dataset = RE_Dataset(tokenized_test, test_label)
 
-            predict_dataset = load_data_entity_punct(self.predict_path)
+            predict_dataset = load_data_entity(self.predict_path, punct)
             predict_label = predict_dataset["label"].values
             tokenized_predict = self.tokenized_dataset_entity(predict_dataset, self.tokenizer)
             self.predict_dataset = RE_Dataset(tokenized_predict, predict_label)

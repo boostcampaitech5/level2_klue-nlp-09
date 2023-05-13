@@ -78,10 +78,13 @@ if __name__ == "__main__":
                 args.data_clean,
                 args.data_aug,
             )
+
+            vocab_size = len(dataloader.tokenizer)
             model = Model(
                 config.model_name,
                 config.learning_rate,
                 config.weight_decay,
+                vocab_size,
                 config.warmup_steps,
                 # args.warmup_steps,
             )
