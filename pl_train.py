@@ -223,8 +223,12 @@ class Dataloader(pl.LightningDataModule):
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
 
-            tokenized_train = self.tokenizing_dataset_entity(train_dataset)
-            tokenized_dev = self.tokenizing_dataset_entity(dev_dataset)
+            if self.tem == "non_punct" or self.tem == "punct":
+                tokenized_train = self.tokenizing_dataset_entity(train_dataset)
+                tokenized_dev = self.tokenizing_dataset_entity(dev_dataset)
+            else:
+                tokenized_train = self.tokenizing(train_dataset)
+                tokenized_dev = self.tokenizing(dev_dataset)
 
             # 학습데이터 준비
             # self.train_inputs, self.train_targets = self.preprocessing(train_data)
