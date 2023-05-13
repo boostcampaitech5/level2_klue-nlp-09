@@ -23,7 +23,6 @@ class preprocessing_dataset_TypedEntityMarker:
         """
         sentence에 subject와 object word 전후에 typed entity marker를 추가합니다.
         """
-        print("NOTICE: Typed Entity Marker without Punct activated")
         subject_end = int(subject_end)
         object_end = int(object_end)
         subject_start = int(subject_start)
@@ -47,7 +46,6 @@ class preprocessing_dataset_TypedEntityMarker:
         """
         sentence에 subject와 object word 전후에 typed entity marker punct를 추가합니다.
         """
-        print("NOTICE: Typed Entity Marker with Punct activated")
         subject_end = int(subject_end)
         object_end = int(object_end)
         subject_start = int(subject_start)
@@ -67,7 +65,7 @@ class preprocessing_dataset_TypedEntityMarker:
         # @ * person * Bill @ was born in # ∧ city ∧ Seattle #.
         return sentence
 
-    def attach_TypedEntityMarker(self, dataset, punct=False):
+    def attach_TypedEntityMarker(self, dataset, punct=True):
         """
         기존의 DataFrame의 sentence 열에 Typed Entity Marker를 부착합니다.
         Args:
@@ -104,17 +102,3 @@ class preprocessing_dataset_TypedEntityMarker:
         out_dataset['sentence'] = sentences
 
         return out_dataset
-
-def tokenized_dataset_entity(dataset, tokenizer):
-    """ tokenizer에 따라 sentence를 tokenizing 합니다."""
-    tokenized_sentences = tokenizer(
-        list(dataset["sentence"]), return_tensors="pt", padding=True, truncation=True, max_length=256, add_special_tokens=True,
-    )
-    return tokenized_sentences
-
-def load_data_entity_punct(dataset_dir):
-    """ csv 파일을 경로에 맞게 불러 옵니다. """
-    pd_dataset = pd.read_csv(dataset_dir)
-    pdt = preprocessing_dataset_TypedEntityMarker()
-    dataset = pdt.attach_TypedEntityMarker(pd_dataset, punct=True)
-    return dataset
