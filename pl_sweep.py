@@ -1,46 +1,43 @@
+import wandb
 import argparse
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping
-
-import wandb
 from pytorch_lightning.loggers import WandbLogger
-
-
 from pl_train import Model, Dataloader, CustomModelCheckpoint
-
 from utils import seed_everything, load_yaml
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
-    model_name = model_dict[2]
+    model_dict = {
+        0: "klue_bert_base",
+        1: "klue_roberta_large",
+        2: "snunlp_kr_electra",
+        3: "xlm_roberta_large",
+        4: "skt_kogpt2",
+    }
+    model_name = model_dict[4]
     args = load_yaml(model_name)
 
     # HP Tuning
     # Sweep을 통해 실행될 학습 코드 작성
     sweep_config = {
-        "method": "random",  # random: 임의의 값의 parameter 세트를 선택
+        "method": "bayes",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
-            "learning_rate": {"values": [5e-5, 3e-5, 1e-5, 7e-6, 5e-6, 3e-6, 1e-6]},
-            "max_epoch": {"values": [8, 10, 15]},
+            "learning_rate": {"values": [5e-5, 1e-5, 5e-6, 1e-6, 5e-7]},
+            "max_epoch": {"values": [3, 5, 10, 20, 30]},
             "batch_size": {"values": [16, 32, 64]},
-            "model_name": {
+            "dropout": {"values": [0.0, 0.1, 0.2, 0.3]},
+            "tem": {"values": ["none", "non_punct", "punct"]},
+            "train_path": {
                 "values": [
-                    args.model_name,
-                    # "klue/roberta-large",
-                    # 'monologg/koelectra-base-v3-discriminator',
-                    # 'beomi/KcELECTRA-base',
-                    # 'rurupang/roberta-base-finetuned-sts',
-                    # 'snunlp/KR-ELECTRA-discriminator'
+                    "~/dataset/train/train_90_ksh.csv",
+                    "~/dataset/train/train_90_aug_4eda_er1000_ksh.csv",
                 ]
             },
-            # 'warm_up_ratio':{
-            #     'values':[0.3, 0.45, 0.6]
-            # },
-            "weight_decay": {"values": [0, 0.01]},
-            # "loss_func": {"values": ["L1"]},
+            "warmup_steps": {"values": [None, 500, 1000]},
+            "weight_decay": {"values": [0, 0.01, 0.05, 0.10]},
         },
-        "metric": {"name": "val_f1", "goal": "maximize"},
+        "metric": {"name": "val_loss", "goal": "minimize"},
     }
 
     # set version to save model
@@ -61,27 +58,51 @@ if __name__ == "__main__":
 
         with wandb.init(config=config) as run:
             config = wandb.config
+            if config.tem == "none":
+                te_nickname = "no"
+            elif config.tem == "non_punct":
+                te_nickname = "np"
+            elif config.tem == "punct":
+                te_nickname = "pu"
+            tp_nickname = (
+                "base"
+                if config.train_path == "~/dataset/train/train_90_ksh.csv"
+                else "aug"
+            )
+            ws_nickname = config.warmup_steps if config.warmup_steps else 0
             # set seed
             seed_everything(args.seed)
-            run.name = f"{config.learning_rate}_{config.batch_size}_{config.weight_decay}_{config.max_epoch}"
+            run.name = f"LR{config.learning_rate}_\
+                ME{config.max_epoch}_\
+                    BS{config.batch_size}_\
+                        DO{config.dropout}_\
+                            TE{te_nickname}_\
+                                TP{tp_nickname}_\
+                                    WS{ws_nickname}_\
+                                        WD{config.weight_decay}"
 
             wandb_logger = WandbLogger(project=args.project_name)
             dataloader = Dataloader(
-                config.model_name,
-                config.batch_size,
-                args.shuffle,
-                args.train_path,
-                args.dev_path,
-                args.dev_path,
-                args.predict_path,
-                args.data_clean,
-                args.data_aug,
+                model_name=args.model_name,
+                batch_size=config.batch_size,
+                shuffle=args.shuffle,
+                tem=config.tem,
+                train_path=config.train_path,
+                dev_path=args.dev_path,
+                test_path=args.dev_path,
+                predict_path=args.predict_path,
+                # args.data_clean,
+                # args.data_aug,
             )
+
+            vocab_size = len(dataloader.tokenizer)
             model = Model(
-                config.model_name,
-                config.learning_rate,
-                config.weight_decay,
-                # args.warmup_steps,
+                model_name=args.model_name,
+                lr=config.learning_rate,
+                weight_decay=config.weight_decay,
+                vocab_size=vocab_size,
+                dropout=config.dropout,
+                warmup_steps=config.warmup_steps,
             )
 
             trainer = pl.Trainer(
@@ -97,9 +118,15 @@ if __name__ == "__main__":
                 callbacks=[
                     # learning rate를 매 step마다 기록
                     LearningRateMonitor(logging_interval="step"),
-                    EarlyStopping("val_f1", patience=7, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+                    EarlyStopping(
+                        "val_loss", patience=6, mode="min", check_finite=False
+                    ),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
                     CustomModelCheckpoint(  # validation f1이 기준보다 높으면 저장
-                        "./results/", f"{args.model_name}_{next(ver):0>4}_{{val_f1:.4f}}", monitor="val_f1", save_top_k=1, mode="max"
+                        "./results/",
+                        f"{args.model_name}_{next(ver):0>4}_{{val_f1:.4f}}",
+                        monitor="val_f1",
+                        save_top_k=1,
+                        mode="max",
                     ),
                 ],
             )
@@ -107,5 +134,9 @@ if __name__ == "__main__":
             trainer.test(model=model, datamodule=dataloader)  # 모델 평가
 
     # Sweep 생성
-    sweep_id = wandb.sweep(sweep=sweep_config, project=args.project_name)  # config 딕셔너리 추가  # project의 이름 추가
-    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=10)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행
+    sweep_id = wandb.sweep(
+        sweep=sweep_config, project=args.project_name
+    )  # config 딕셔너리 추가  # project의 이름 추가
+    wandb.agent(
+        sweep_id=sweep_id, function=sweep_train, count=10
+    )  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행
