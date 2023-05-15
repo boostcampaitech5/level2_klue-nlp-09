@@ -44,7 +44,7 @@ class RE_Dataset(torch.utils.data.Dataset):
 
 
 class Dataloader(pl.LightningDataModule):
-    def __init__(self, model_name, batch_size, shuffle, tem, train_path, dev_path, test_path, predict_path): #, data_clean, data_aug):
+    def __init__(self, model_name, batch_size, shuffle, tem, train_path, dev_path, test_path, predict_path, data_clean): #, data_aug):
         super().__init__()
         self.model_name = model_name
         self.batch_size = batch_size
@@ -69,7 +69,7 @@ class Dataloader(pl.LightningDataModule):
         if self.tokenizer.pad_token is None:
             self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-        # self.data_clean = data_clean
+        self.data_clean = data_clean
         # self.data_aug = data_aug
 
         ########################### LDH/typed_entity_marker ################################
@@ -476,7 +476,7 @@ if __name__ == "__main__":
         dev_path=config.dev_path,
         test_path=config.dev_path,
         predict_path=config.predict_path,
-        # config.data_clean,
+        data_clean=config.data_clean,
         # config.data_aug,
     )
 
@@ -511,7 +511,7 @@ if __name__ == "__main__":
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            EarlyStopping("val_loss", patience=6, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            EarlyStopping("val_loss", patience=8, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
             # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )
@@ -525,7 +525,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "kogpt2_test_run.pt")
+    torch.save(model, "kogpt2_0002_val_f1:62.1844.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용

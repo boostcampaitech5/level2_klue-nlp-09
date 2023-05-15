@@ -33,8 +33,8 @@ def num_to_label(label):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
-    model_name = model_dict[1]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "skt_kogpt2"}
+    model_name = model_dict[4]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -42,15 +42,16 @@ if __name__ == "__main__":
 
     # # dataloader와 model을 생성합니다.
     dataloader = Dataloader(
-        config.model_name,
-        config.per_device_train_batch_size,
-        config.shuffle,
-        config.train_path,
-        config.dev_path,
-        config.dev_path,
-        config.predict_path,
-        config.data_clean,
-        config.data_aug,
+        model_name=config.model_name,
+        batch_size=config.per_device_train_batch_size,
+        shuffle=config.shuffle,
+        tem=config.tem,
+        train_path=config.train_path,
+        dev_path=config.dev_path,
+        test_path=config.dev_path,
+        predict_path=config.predict_path,
+        # config.data_clean,
+        # config.data_aug,
     )
 
     # total_steps = warmup_steps = None
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     # pt 파일인 경우
     # model_path = "model.pt"
     # ckpt 파일인 경우
-    model_path = "./results/klue/roberta-large_0004_val_f1=64.4784.ckpt"
+    model_path = "./results/skt_kogpt2/kogpt2_0001_val_f1:62.2222.pt"
     score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
     # score = re.match(r"(?<==).*(?=(\.ckpt|\.pt))", model_path).group()
 
