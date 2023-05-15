@@ -18,8 +18,8 @@ if __name__ == "__main__":
         "method": "bayes",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
             "learning_rate": {"values": [5e-5, 1e-5, 5e-6, 1e-6, 5e-7]},
-            "max_epoch": {"values": [3, 5, 10, 20, 30]},
-            "batch_size": {"values": [16, 32, 64]},
+            # "max_epoch": {"values": [3, 5, 10, 20, 30]},
+            "batch_size": {"values": [16, 32, 64, 96]},
             "dropout": {"values": [0.0, 0.1, 0.2, 0.3]},
             "tem": {"values": ["none", "non_punct", "punct"]},
             "train_path" : {
@@ -63,13 +63,12 @@ if __name__ == "__main__":
             # set seed
             seed_everything(args.seed)
             run.name = f"LR{config.learning_rate}_\
-                ME{config.max_epoch}_\
-                    BS{config.batch_size}_\
-                        DO{config.dropout}_\
-                            TE{te_nickname}_\
-                                TP{tp_nickname}_\
-                                    WS{ws_nickname}_\
-                                        WD{config.weight_decay}"
+                BS{config.batch_size}_\
+                    DO{config.dropout}_\
+                        TE{te_nickname}_\
+                            TP{tp_nickname}_\
+                                WS{ws_nickname}_\
+                                    WD{config.weight_decay}"
 
             wandb_logger = WandbLogger(project=args.project_name)
             dataloader = Dataloader(
@@ -100,7 +99,7 @@ if __name__ == "__main__":
                 accelerator="gpu",  # GPU 사용
                 # dataloader를 매 epoch마다 reload해서 resampling
                 # reload_dataloaders_every_n_epochs=1,
-                max_epochs=config.max_epoch,  # 최대 epoch 수
+                max_epochs=args.num_train_epochs,  # 최대 epoch 수
                 logger=wandb_logger,  # wandb logger 사용
                 log_every_n_steps=1,  # 1 step마다 로그 기록
                 val_check_interval=0.5,  # 0.25 epoch마다 validation
@@ -108,7 +107,7 @@ if __name__ == "__main__":
                 callbacks=[
                     # learning rate를 매 step마다 기록
                     LearningRateMonitor(logging_interval="step"),
-                    EarlyStopping("val_loss", patience=6, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+                    EarlyStopping("val_loss", patience=8, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
                     CustomModelCheckpoint(  # validation f1이 기준보다 높으면 저장
                         "./results/", f"{args.model_name}_{next(ver):0>4}_{{val_f1:.4f}}", monitor="val_f1", save_top_k=1, mode="max"
                     ),

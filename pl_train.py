@@ -443,7 +443,7 @@ class CustomModelCheckpoint(ModelCheckpoint):
             monitor_candidates = self._monitor_candidates(trainer)
             current = monitor_candidates.get(self.monitor)
             # added
-            if torch.isnan(current) or current < 50:
+            if torch.isnan(current) or current < 65:
                 return
             ###
             if self._every_n_epochs >= 1 and (trainer.current_epoch + 1) % self._every_n_epochs == 0:

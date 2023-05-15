@@ -8,35 +8,35 @@ import re
 
 
 def clean_foreign_language(df):
-  def clean_chinese(row):
-    # foreign_regex = re.compile(r'(([一-鿕]|[㐀-䶵]|[豈-龎])+)()')
-    foreign_regex = re.compile(r'(\({1}(([一-鿕]|[㐀-䶵]|[豈-龎])+)\){1})|((([一-鿕]|[㐀-䶵]|[豈-龎])+)\,{1}\s{1})')
-    sentence = row['sentence']
-    while(re.search(foreign_regex, row['sentence'])):
-      # sentence 의 한자 제거
-      start=re.search(foreign_regex, row['sentence']).span()[0]
-      end = re.search(foreign_regex, row['sentence']).span()[1]
-      row['sentence'] = row['sentence'][0:start] + row['sentence'][end:len(row['sentence'])]
-      # 한자 제거에 따른 subject, object entity index 변경
-      temp_sub = row['subject_entity'].split("'")
-      temp_obj = row['object_entity'].split("'")
-      sub_start = int(temp_sub[6].split(" ")[1].split(",")[0])
-      sub_end = int(temp_sub[8].split(" ")[1].split(",")[0])
-      obj_start = int(temp_obj[6].split(" ")[1].split(",")[0])
-      obj_end = int(temp_obj[8].split(" ")[1].split(",")[0])
-      length = end - start
-      if sub_start >start:
-        sub_start = sub_start-length
-        sub_end = sub_end-length
-        temp_sub[6] = ": "+str(sub_start) + ", "
-        temp_sub[8] = ": "+str(sub_end) + ", "
-        row['subject_entity'] = "'".join(temp_sub)
-      if obj_start >start:
-        obj_start = obj_start-length
-        obj_end = obj_end-length
-        temp_obj[6] = ": "+str(obj_start) + ", "
-        temp_obj[8] = ": "+str(obj_end) + ", "
-        row['object_entity'] = "'".join(temp_obj)
+    def clean_chinese(row):
+        # foreign_regex = re.compile(r'(([一-鿕]|[㐀-䶵]|[豈-龎])+)()')
+        foreign_regex = re.compile(r'(\({1}(([一-鿕]|[㐀-䶵]|[豈-龎])+)\){1})|((([一-鿕]|[㐀-䶵]|[豈-龎])+)\,{1}\s{1})')
+        sentence = row['sentence']
+        while(re.search(foreign_regex, row['sentence'])):
+            # sentence 의 한자 제거
+            start=re.search(foreign_regex, row['sentence']).span()[0]
+            end = re.search(foreign_regex, row['sentence']).span()[1]
+            row['sentence'] = row['sentence'][0:start] + row['sentence'][end:len(row['sentence'])]
+            # 한자 제거에 따른 subject, object entity index 변경
+            temp_sub = row['subject_entity'].split("'")
+            temp_obj = row['object_entity'].split("'")
+            sub_start = int(temp_sub[6].split(" ")[1].split(",")[0])
+            sub_end = int(temp_sub[8].split(" ")[1].split(",")[0])
+            obj_start = int(temp_obj[6].split(" ")[1].split(",")[0])
+            obj_end = int(temp_obj[8].split(" ")[1].split(",")[0])
+            length = end - start
+            if sub_start >start:
+                sub_start = sub_start-length
+                sub_end = sub_end-length
+                temp_sub[6] = ": "+str(sub_start) + ", "
+                temp_sub[8] = ": "+str(sub_end) + ", "
+                row['subject_entity'] = "'".join(temp_sub)
+            if obj_start >start:
+                obj_start = obj_start-length
+                obj_end = obj_end-length
+                temp_obj[6] = ": "+str(obj_start) + ", "
+                temp_obj[8] = ": "+str(obj_end) + ", "
+                row['object_entity'] = "'".join(temp_obj)
 
     def clean_chinese(row):
         # print("row: ",row)
@@ -526,7 +526,7 @@ def entity_replacement(data, threshold=1000, entity='subject'):
 
 
 if  __name__ == "__main__":
-    df = pd.read_csv("../dataset/train/v1/train.csv")
+    df = pd.read_csv("../dataset/train/train_90.csv")
     foreign_regex = re.compile(r'([一-鿕]|[㐀-䶵]|[豈-龎])+') 
     search_subject = []
     search_object = []

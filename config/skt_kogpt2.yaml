@@ -7,7 +7,8 @@ dev_path: ~/dataset/dev/dev_10_ksh.csv
 predict_path: ~/dataset/test/test_data.csv
 shuffle: True
 tem: "none" # typed entity marker: "none", "non_punct", "punct"
-# tem_punct: False # typed entity marker with punctuation
+data_clean:
+  - spellcheck
 
 # seed
 seed: 42
@@ -16,7 +17,7 @@ seed: 42
 output_dir: ./results/skt_kogpt2  # output directory
 save_total_limit: 2  # number of total save model.
 save_steps: 500  # model saving step.
-num_train_epochs: 10  # total number of training epochs
+num_train_epochs: 20  # total number of training epochs
 learning_rate: 1e-5  # learning_rate
 dropout: 0.2
 per_device_train_batch_size: 64  # batch size per device during training
