@@ -352,7 +352,7 @@ class CustomModelCheckpoint(ModelCheckpoint):
             monitor_candidates = self._monitor_candidates(trainer)
             current = monitor_candidates.get(self.monitor)
             # added
-            if torch.isnan(current) or current < 50:
+            if torch.isnan(current) or current < 63:
                 return
             ###
             if self._every_n_epochs >= 1 and (trainer.current_epoch + 1) % self._every_n_epochs == 0:
@@ -416,7 +416,7 @@ if __name__ == "__main__":
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            EarlyStopping("val_f1", patience=5, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            EarlyStopping("val_f1", patience=7, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
             # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )

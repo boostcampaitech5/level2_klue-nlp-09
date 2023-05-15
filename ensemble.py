@@ -11,6 +11,10 @@ with open(num2label, "rb") as f:
 model_paths = [
     "prediction/klue_roberta_large_f1_64.6972.csv",
     "prediction/klue_roberta_large_f1_64.4784.csv",
+    "prediction/klue_roberta_large_f1_63.9121.csv",
+    "prediction/klue_bert_base_f1_63.3930.csv",
+    "prediction/google_rembert_f1_63.4938.csv",
+    "prediction/google_rembert_f1_63.0301.csv",
 ]
 
 # submission 파일 로드

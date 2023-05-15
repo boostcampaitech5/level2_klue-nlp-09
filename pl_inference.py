@@ -33,8 +33,8 @@ def num_to_label(label):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large"}
-    model_name = model_dict[1]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
+    model_name = model_dict[4]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -60,11 +60,11 @@ if __name__ == "__main__":
 
     # 예측할 모델 경로 설정
     # pt 파일인 경우
-    # model_path = "model.pt"
+    # model_path = "/opt/ml/code/best_model/klue_roberta_large/0511_693538.pt"
+    # score = "63.9121"
     # ckpt 파일인 경우
-    model_path = "./results/klue/roberta-large_0004_val_f1=64.4784.ckpt"
+    model_path = "./results/google/rembert_0006_val_f1=63.0301.ckpt"
     score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
-    # score = re.match(r"(?<==).*(?=(\.ckpt|\.pt))", model_path).group()
 
     # 저장된 모델로 예측을 진행합니다.
     if model_path.endswith(".pt"):
