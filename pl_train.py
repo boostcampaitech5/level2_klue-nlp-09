@@ -285,8 +285,8 @@ class Model(pl.LightningModule):
         loss = self.loss_func(logits.float(), y)
         self.log("val_loss", loss)
 
-        f1 = klue_re_micro_f1(logits.argmax(-1).cpu(), y.cpu())
-        self.log("val_f1", f1)
+        self.val_f1 = klue_re_micro_f1(logits.argmax(-1).cpu(), y.cpu())
+        self.log("val_f1", self.val_f1)
         # auprc = klue_re_auprc(logits.cpu(), y.cpu())
         # self.log("val_auprc", auprc)
 
@@ -400,8 +400,8 @@ if __name__ == "__main__":
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            EarlyStopping("val_f1", patience=5, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
-            # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
+            EarlyStopping("val_f1", patience=8, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            CustomModelCheckpoint("./save/", f"{config.model_name}_{{val_f1:.4f}}", monitor="val_f1", save_top_k=1, mode="max"),
         ],
     )
 
@@ -414,7 +414,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "model.pt")
+    #torch.save(model, f"./results/{config.model_name}_{config.learning_rate}_{config.per_device_train_batch_size}_val_f1={model.val_f1:.4f}.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용
