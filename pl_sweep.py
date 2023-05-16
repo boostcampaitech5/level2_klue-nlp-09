@@ -8,8 +8,13 @@ from utils import seed_everything, load_yaml
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "skt_kogpt2"}
-    model_name = model_dict[4]
+    model_dict = {0: "klue_bert_base", 
+                  1: "klue_roberta_large", 
+                  2: "snunlp_kr_electra", 
+                  3: "xlm_roberta_large", 
+                  4: "skt_kogpt2",
+                  5: "twhin_bert_large"}
+    model_name = model_dict[5]
     args = load_yaml(model_name)
 
     # HP Tuning
@@ -19,17 +24,17 @@ if __name__ == "__main__":
         "parameters": {
             "learning_rate": {"values": [5e-5, 1e-5, 5e-6, 1e-6, 5e-7]},
             # "max_epoch": {"values": [3, 5, 10, 20, 30]},
-            "batch_size": {"values": [16, 32, 64, 96]},
+            "batch_size": {"values": [8, 16, 24]},
             "dropout": {"values": [0.0, 0.1, 0.2, 0.3]},
-            "tem": {"values": ["none", "non_punct", "punct"]},
             "train_path" : {
                 "values": [
                     "~/dataset/train/train_90_ksh.csv",
                     "~/dataset/train/train_90_aug_4eda_er1000_ksh.csv",
                 ]
             },
-            "warmup_steps": {"values": [None, 500, 1000]},
-            "weight_decay": {"values": [0, 0.01, 0.05, 0.10]},
+            "warmup_steps": {"values": [None, 500, 1000, 2000]},
+            # "warm_up_ratio": {"values": [0.02, 0.05, 0.10, 0.15]},
+            "weight_decay": {"values": [0, 0.01, 0.03, 0.05, 0.10]},
         },
         "metric": {"name": "val_loss", "goal": "minimize"},
     }
@@ -52,12 +57,6 @@ if __name__ == "__main__":
 
         with wandb.init(config=config) as run:
             config = wandb.config
-            if config.tem == "none":
-                te_nickname = 'no'
-            elif config.tem == "non_punct":
-                te_nickname = 'np'
-            elif config.tem == "punct":
-                te_nickname = 'pu'
             tp_nickname = 'base' if config.train_path == '~/dataset/train/train_90_ksh.csv' else 'aug'
             ws_nickname = config.warmup_steps if config.warmup_steps else 0
             # set seed
@@ -65,17 +64,16 @@ if __name__ == "__main__":
             run.name = f"LR{config.learning_rate}_\
                 BS{config.batch_size}_\
                     DO{config.dropout}_\
-                        TE{te_nickname}_\
-                            TP{tp_nickname}_\
-                                WS{ws_nickname}_\
-                                    WD{config.weight_decay}"
+                        TP{tp_nickname}_\
+                            WS{ws_nickname}_\
+                                WD{config.weight_decay}"
 
             wandb_logger = WandbLogger(project=args.project_name)
             dataloader = Dataloader(
                 model_name=args.model_name,
                 batch_size=config.batch_size,
                 shuffle=args.shuffle,
-                tem=config.tem,
+                tem=args.tem,
                 train_path=config.train_path,
                 dev_path=args.dev_path,
                 test_path=args.dev_path,
@@ -118,4 +116,4 @@ if __name__ == "__main__":
 
     # Sweep 생성
     sweep_id = wandb.sweep(sweep=sweep_config, project=args.project_name)  # config 딕셔너리 추가  # project의 이름 추가
-    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=50)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행
+    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=20)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행

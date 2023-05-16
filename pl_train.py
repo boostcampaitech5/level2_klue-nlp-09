@@ -44,7 +44,7 @@ class RE_Dataset(torch.utils.data.Dataset):
 
 
 class Dataloader(pl.LightningDataModule):
-    def __init__(self, model_name, batch_size, shuffle, tem, train_path, dev_path, test_path, predict_path, data_clean): #, data_aug):
+    def __init__(self, model_name, batch_size, shuffle, tem, train_path, dev_path, test_path, predict_path ): #, data_clean):
         super().__init__()
         self.model_name = model_name
         self.batch_size = batch_size
@@ -69,7 +69,7 @@ class Dataloader(pl.LightningDataModule):
         if self.tokenizer.pad_token is None:
             self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-        self.data_clean = data_clean
+        # self.data_clean = data_clean
         # self.data_aug = data_aug
 
         ########################### LDH/typed_entity_marker ################################
@@ -96,9 +96,6 @@ class Dataloader(pl.LightningDataModule):
                     ]
                 }
             )
-
-        # self.data_clean = data_clean
-        # self.data_aug = data_aug
 
     def tokenizing(self, dataset):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
@@ -209,7 +206,7 @@ class Dataloader(pl.LightningDataModule):
                 dev_dataset = self.preprocessing(dev_dataset)
 
             print(train_dataset['sentence'].iloc[0])
-            #############################
+            # ############################
             # cleaning_list = self.data_clean
             # augmentation_list = self.data_aug
 
@@ -218,7 +215,7 @@ class Dataloader(pl.LightningDataModule):
 
             # train_dataset = sc.process(train_dataset)
             # train_dataset = sa.process(train_dataset)
-            ################################
+            # ###############################
 
             train_label = label_to_num(train_dataset["label"].values)
             dev_label = label_to_num(dev_dataset["label"].values)
@@ -452,8 +449,13 @@ class CustomModelCheckpoint(ModelCheckpoint):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "skt_kogpt2"}
-    model_name = model_dict[4]
+    model_dict = {0: "klue_bert_base", 
+                  1: "klue_roberta_large", 
+                  2: "snunlp_kr_electra", 
+                  3: "xlm_roberta_large", 
+                  4: "skt_kogpt2",
+                  5: "twhin_bert_large"}
+    model_name = model_dict[5]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -476,7 +478,7 @@ if __name__ == "__main__":
         dev_path=config.dev_path,
         test_path=config.dev_path,
         predict_path=config.predict_path,
-        data_clean=config.data_clean,
+        # data_clean=config.data_clean,
         # config.data_aug,
     )
 
@@ -525,7 +527,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "kogpt2_0002_val_f1:62.1844.pt")
+    torch.save(model, "twhin_bert_large_test1.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용

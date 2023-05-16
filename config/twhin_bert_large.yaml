@@ -1,9 +1,9 @@
 # model
-model_name: skt/kogpt2-base-v2
+model_name: Twitter/twhin-bert-large
 
 # data
-train_path: ~/dataset/train/train_90_aug_4eda_er1000_ksh.csv
-dev_path: ~/dataset/dev/dev_10_ksh.csv
+train_path: ~/dataset/train/train_90_ljs.csv
+dev_path: ~/dataset/dev/dev_10_ljs.csv
 predict_path: ~/dataset/test/test_data.csv
 shuffle: True
 tem: punct # typed entity marker: "none", "non_punct", "punct"
@@ -14,16 +14,16 @@ tem: punct # typed entity marker: "none", "non_punct", "punct"
 seed: 42
 
 # train
-output_dir: ./results/skt_kogpt2  # output directory
+output_dir: ./results/twhin_bert_large  # output directory
 save_total_limit: 2  # number of total save model.
 save_steps: 500  # model saving step.
 num_train_epochs: 20  # total number of training epochs
 learning_rate: 5e-6  # learning_rate
 dropout: 0.2
-per_device_train_batch_size: 96  # batch size per device during training
-per_device_eval_batch_size: 96  # batch size for evaluation
-warmup_steps: 1000  # number of warmup steps for learning rate scheduler
-weight_decay: 0.01  # strength of weight decay
+per_device_train_batch_size: 24  # batch size per device during training
+per_device_eval_batch_size: 24  # batch size for evaluation
+warmup_steps: 2000  # number of warmup steps for learning rate scheduler
+weight_decay: 0.03  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
 logging_steps: 10  # log saving step.
 evaluation_strategy: steps  # evaluation strategy to adopt during training
@@ -34,8 +34,8 @@ eval_steps: 250  # evaluation step.
 load_best_model_at_end: True
 
 # save
-save_path: ./best_model/skt_kogpt2
+save_path: ./best_model/twhin_bert_large
 
 # wandb
-run_name: kogpt2_best1_with_cc
-project_name: kogpt2
+run_name: tbl_best1
+project_name: twhin_bert_large

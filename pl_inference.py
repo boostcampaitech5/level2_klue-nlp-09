@@ -63,7 +63,7 @@ if __name__ == "__main__":
     # pt 파일인 경우
     # model_path = "model.pt"
     # ckpt 파일인 경우
-    model_path = "./results/skt_kogpt2/kogpt2_0001_val_f1:62.2222.pt"
+    model_path = "./results/skt_kogpt2/kogpt2_0002_val_f1:62.1844.pt"
     score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
     # score = re.match(r"(?<==).*(?=(\.ckpt|\.pt))", model_path).group()
 
