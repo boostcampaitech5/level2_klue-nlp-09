@@ -117,7 +117,7 @@ class Dataloader(pl.LightningDataModule):
             dev_dataset = self.load_data_entity(self.dev_path, punct)
 
             print(train_dataset['sentence'].iloc[0])
-            exit()
+            
             #############################
             # cleaning_list = self.data_clean
             # augmentation_list = self.data_aug
