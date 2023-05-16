@@ -7,36 +7,65 @@ from collections import defaultdict
 import re
 
 
+def check_entity_info(augmented_data, aug_id, print_wrong_sentence=False, print_wrong_entity=False):
+    sbj_wrong, obj_wrong = 0, 0
+    for idx, ad in augmented_data.iterrows():
+        sbj_target = eval(ad.subject_entity)['word']
+        sbj_calculated = ad.sentence[eval(ad.subject_entity)['start_idx']:eval(ad.subject_entity)['end_idx']+1]
+        if sbj_target != sbj_calculated:
+            sbj_wrong += 1
+            if print_wrong_sentence:
+                print(ad.id)
+                print(augmented_data.iloc[ad.id - aug_id].sentence)
+                print(ad.sentence)
+            if print_wrong_entity:
+                print(sbj_target, sbj_calculated, sep=' / ')
+
+        obj_target = eval(ad.object_entity)['word']
+        obj_calculated = ad.sentence[eval(ad.object_entity)['start_idx']:eval(ad.object_entity)['end_idx']+1]
+        if obj_target != obj_calculated:
+            obj_wrong += 1
+            if print_wrong_sentence:
+                print(ad.id)
+                print(augmented_data.iloc[ad.id - aug_id].sentence)
+                print(ad.sentence)
+            if print_wrong_entity:
+                print(obj_target, obj_calculated, sep=' / ')
+
+    print(f"Subject Entity's Wrong Calculation: {sbj_wrong / len(augmented_data) * 100:.2f}%")
+    print(f"Object Entity's Wrong Calculation: {obj_wrong / len(augmented_data) * 100:.2f}%")
+
+
 def clean_foreign_language(df):
-  def clean_chinese(row):
-    # foreign_regex = re.compile(r'(([一-鿕]|[㐀-䶵]|[豈-龎])+)()')
-    foreign_regex = re.compile(r'(\({1}(([一-鿕]|[㐀-䶵]|[豈-龎])+)\){1})|((([一-鿕]|[㐀-䶵]|[豈-龎])+)\,{1}\s{1})')
-    sentence = row['sentence']
-    while(re.search(foreign_regex, row['sentence'])):
-      # sentence 의 한자 제거
-      start=re.search(foreign_regex, row['sentence']).span()[0]
-      end = re.search(foreign_regex, row['sentence']).span()[1]
-      row['sentence'] = row['sentence'][0:start] + row['sentence'][end:len(row['sentence'])]
-      # 한자 제거에 따른 subject, object entity index 변경
-      temp_sub = row['subject_entity'].split("'")
-      temp_obj = row['object_entity'].split("'")
-      sub_start = int(temp_sub[6].split(" ")[1].split(",")[0])
-      sub_end = int(temp_sub[8].split(" ")[1].split(",")[0])
-      obj_start = int(temp_obj[6].split(" ")[1].split(",")[0])
-      obj_end = int(temp_obj[8].split(" ")[1].split(",")[0])
-      length = end - start
-      if sub_start >start:
-        sub_start = sub_start-length
-        sub_end = sub_end-length
-        temp_sub[6] = ": "+str(sub_start) + ", "
-        temp_sub[8] = ": "+str(sub_end) + ", "
-        row['subject_entity'] = "'".join(temp_sub)
-      if obj_start >start:
-        obj_start = obj_start-length
-        obj_end = obj_end-length
-        temp_obj[6] = ": "+str(obj_start) + ", "
-        temp_obj[8] = ": "+str(obj_end) + ", "
-        row['object_entity'] = "'".join(temp_obj)
+    def clean_chinese(row):
+        # foreign_regex = re.compile(r'(([一-鿕]|[㐀-䶵]|[豈-龎])+)()')
+        foreign_regex = re.compile(r'(\({1}(([一-鿕]|[㐀-䶵]|[豈-龎])+)\){1})|((([一-鿕]|[㐀-䶵]|[豈-龎])+)\,{1}\s{1})')
+        sentence = row['sentence']
+        while(re.search(foreign_regex, row['sentence'])):
+            # sentence 의 한자 제거
+            start=re.search(foreign_regex, row['sentence']).span()[0]
+            end = re.search(foreign_regex, row['sentence']).span()[1]
+            row['sentence'] = row['sentence'][0:start] + row['sentence'][end:len(row['sentence'])]
+            # 한자 제거에 따른 subject, object entity index 변경
+            temp_sub = row['subject_entity'].split("'")
+            temp_obj = row['object_entity'].split("'")
+            sub_start = int(temp_sub[6].split(" ")[1].split(",")[0])
+            sub_end = int(temp_sub[8].split(" ")[1].split(",")[0])
+            obj_start = int(temp_obj[6].split(" ")[1].split(",")[0])
+            obj_end = int(temp_obj[8].split(" ")[1].split(",")[0])
+            length = end - start
+            if sub_start >start:
+                sub_start = sub_start-length
+                sub_end = sub_end-length
+                temp_sub[6] = ": "+str(sub_start) + ", "
+                temp_sub[8] = ": "+str(sub_end) + ", "
+                row['subject_entity'] = "'".join(temp_sub)
+            if obj_start >start:
+                obj_start = obj_start-length
+                obj_end = obj_end-length
+                temp_obj[6] = ": "+str(obj_start) + ", "
+                temp_obj[8] = ": "+str(obj_end) + ", "
+                row['object_entity'] = "'".join(temp_obj)
 
     def clean_chinese(row):
         # print("row: ",row)
@@ -69,13 +98,13 @@ def clean_foreign_language(df):
                 temp_obj[8] = ": "+str(obj_end) + ", "
                 row['object_entity'] = "'".join(temp_obj)
 
-    return row
+        return row
 
     search_subject = []
     search_object = []
     for i, dic in enumerate(df['subject_entity']):
         # print(dic)
-        if re.search(foreign_regex,dic):
+        if re.search(foreign_regex, dic):
             search_subject.append(i)
     for i, dic in enumerate(df['object_entity']):
         # print(dic)
@@ -85,6 +114,7 @@ def clean_foreign_language(df):
     df.drop(search_subject, axis =0, inplace=True)
     df.drop(search_object, axis =0, inplace=True)
     df = df.apply(lambda x : clean_chinese(x) , axis=1)
+
     return df
 
 
@@ -123,15 +153,18 @@ def synonym_replacement(data, n=2):
     replaced_dict = defaultdict(list)
     for idx, d in data.iterrows():
         sentence = d.sentence
-        replaced_sentence = sentence
+        replaced_sentence = sentence[:]
         sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
         
         # 형태소 단위로 분리하여 유의어 탐색
         okt = Okt()
         words = [ss for ss in okt.morphs(sentence) if len(ss) > 1] # 1글자 유의어는 틀릴 확률이 너무 높기 때문에, 2글자 이상 단어만
         random_words = list(set([word for word in words]))
-        for random_word in random_words:
-            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+        for random_word in random_words[:]:
+            # Entity 내의 단어 뿐만 아니라, random_word가 entity 단어와 겹치는 경우까지 모두 제외
+            sbj_ent_extended = sentence[max(sbj_dict['start_idx'] - len(random_word) + 1, 0):min(sbj_dict['end_idx'] + len(random_word), len(sentence))]
+            obj_ent_extended = sentence[max(obj_dict['start_idx'] - len(random_word) + 1, 0):min(obj_dict['end_idx'] + len(random_word), len(sentence))]
+            if random_word in sbj_ent_extended or random_word in obj_ent_extended:
                 random_words.remove(random_word)
         random.shuffle(random_words)
         
@@ -202,15 +235,18 @@ def random_deletion(data, n=1):
     replaced_dict = defaultdict(list)
     for idx, d in data.iterrows():
         sentence = d.sentence
-        replaced_sentence = sentence
+        replaced_sentence = sentence[:]
         sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
         
         # 형태소 단위로 분리
         okt = Okt()
         words = [ss for ss in okt.morphs(sentence) if len(ss) > 1] # 2글자 이상 단어만
         random_words = list(set([word for word in words]))
-        for random_word in random_words:
-            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+        for random_word in random_words[:]:
+            # Entity 내의 단어 뿐만 아니라, random_word가 entity 단어와 겹치는 경우까지 모두 제외
+            sbj_ent_extended = sentence[max(sbj_dict['start_idx'] - len(random_word) + 1, 0):min(sbj_dict['end_idx'] + len(random_word), len(sentence))]
+            obj_ent_extended = sentence[max(obj_dict['start_idx'] - len(random_word) + 1, 0):min(obj_dict['end_idx'] + len(random_word), len(sentence))]
+            if random_word in sbj_ent_extended or random_word in obj_ent_extended:
                 random_words.remove(random_word)
         random.shuffle(random_words)
         
@@ -284,15 +320,18 @@ def random_swap(data, n_pairs=1):
     replaced_dict = defaultdict(list)
     for idx, d in data.iterrows():
         sentence = d.sentence
-        replaced_sentence = sentence
+        replaced_sentence = sentence[:]
         sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
         
         # 형태소 단위로 분리
         okt = Okt()
         words = [ss for ss in okt.nouns(sentence) if len(ss) > 1] # 2글자 이상 '명사' 단어만
         random_words = list(set([word for word in words]))
-        for random_word in random_words:
-            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+        for random_word in random_words[:]:
+            # Entity 내의 단어 뿐만 아니라, random_word가 entity 단어와 겹치는 경우까지 모두 제외
+            sbj_ent_extended = sentence[max(sbj_dict['start_idx'] - len(random_word) + 1, 0):min(sbj_dict['end_idx'] + len(random_word), len(sentence))]
+            obj_ent_extended = sentence[max(obj_dict['start_idx'] - len(random_word) + 1, 0):min(obj_dict['end_idx'] + len(random_word), len(sentence))]
+            if random_word in sbj_ent_extended or random_word in obj_ent_extended:
                 random_words.remove(random_word)
         random.shuffle(random_words)
         
@@ -315,7 +354,7 @@ def random_swap(data, n_pairs=1):
             len_changes.extend([len(random_word2) - len(random_word1), len(random_word1) - len(random_word2)])
             replaced_sentence1 = replaced_sentence.replace(random_word1, random_word2, 1)
             replaced_sentence2 = replaced_sentence.replace(random_word2, random_word1, 1)
-            replaced_sentence = replaced_sentence1[:replaced_index1 + len(random_word2) + 1] + replaced_sentence2[replaced_index1 + len(random_word2) + 1:]
+            replaced_sentence = replaced_sentence1[:replaced_index1 + len(random_word2)] + replaced_sentence[replaced_index1 + len(random_word1):replaced_index2] + replaced_sentence2[replaced_index2:]
 
             num_replaced += 1
             
@@ -371,15 +410,18 @@ def random_insertion(data, n=1):
     replaced_dict = defaultdict(list)
     for idx, d in data.iterrows():
         sentence = d.sentence
-        replaced_sentence = sentence
+        replaced_sentence = sentence[:]
         sbj_dict, obj_dict = eval(d.subject_entity), eval(d.object_entity)
         
         # 형태소 단위로 분리
         okt = Okt()
         words = [ss for ss in okt.morphs(sentence) if len(ss) > 1] # 2글자 이상 단어만
         random_words = list(set([word for word in words]))
-        for random_word in random_words:
-            if random_word in sbj_dict['word'] or sbj_dict['word'] in random_word or random_word in obj_dict['word'] or obj_dict['word'] in random_word:
+        for random_word in random_words[:]:
+            # Entity 내의 단어 뿐만 아니라, random_word가 entity 단어와 겹치는 경우까지 모두 제외
+            sbj_ent_extended = sentence[max(sbj_dict['start_idx'] - len(random_word) + 1, 0):min(sbj_dict['end_idx'] + len(random_word), len(sentence))]
+            obj_ent_extended = sentence[max(obj_dict['start_idx'] - len(random_word) + 1, 0):min(obj_dict['end_idx'] + len(random_word), len(sentence))]
+            if random_word in sbj_ent_extended or random_word in obj_ent_extended:
                 random_words.remove(random_word)
         random.shuffle(random_words)
         
@@ -526,7 +568,7 @@ def entity_replacement(data, threshold=1000, entity='subject'):
 
 
 if  __name__ == "__main__":
-    df = pd.read_csv("../dataset/train/v1/train.csv")
+    df = pd.read_csv("../dataset/train/train_90.csv")
     foreign_regex = re.compile(r'([一-鿕]|[㐀-䶵]|[豈-龎])+') 
     search_subject = []
     search_object = []
