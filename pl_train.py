@@ -69,6 +69,11 @@ class Dataloader(pl.LightningDataModule):
             '* PER *', '* ORG *',
             '^ PER ^', '^ ORG ^', '^ DAT ^', '^ LOC ^', '^ NOH ^', '^ POH ^']
             })
+        
+        # source에 해당하는 special token을 추가합니다
+        self.tokenizer.add_special_tokens({'additional_special_tokens' : [
+            '< wikipedia >', '< wikitree >', '< policy_briefing >']
+            })
 
         self.data_clean = data_clean
         self.data_aug = data_aug
@@ -112,6 +117,7 @@ class Dataloader(pl.LightningDataModule):
             dev_dataset = self.load_data_entity(self.dev_path, punct)
 
             print(train_dataset['sentence'].iloc[0])
+            exit()
             #############################
             # cleaning_list = self.data_clean
             # augmentation_list = self.data_aug
@@ -343,7 +349,7 @@ class CustomModelCheckpoint(ModelCheckpoint):
 
 if __name__ == "__main__":
     model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
-    model_name = model_dict[4]
+    model_name = model_dict[0]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed

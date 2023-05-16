@@ -66,11 +66,11 @@ class preprocessing_dataset_TypedEntityMarker:
         return sentence
     
     def insert_source(self, sentence, source):
-        sentence = self.insert_word(sentence, 0, f"<{source}> ")
+        sentence = self.insert_word(sentence, 0, f"< {source} > ")
         
         return sentence
 
-    def attach_TypedEntityMarkerAndSource(self, dataset, punct=True):
+    def attach_TypedEntityMarker(self, dataset, punct=True):
         """
         기존의 DataFrame의 sentence 열에 Typed Entity Marker를 부착합니다.
         Args:
