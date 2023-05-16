@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 import wandb
 from utils import seed_everything, load_yaml
-from pl_train import RE_Dataset, Dataloader, Model
+from pl_train_kobart import RE_Dataset, Dataloader, Model
 import torch.nn.functional as F
 import re
 
