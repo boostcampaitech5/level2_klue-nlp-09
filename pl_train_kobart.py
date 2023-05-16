@@ -84,9 +84,9 @@ class Dataloader(pl.LightningDataModule):
     def load_data_entity(self, dataset_dir, punct=True):
         """ csv 파일을 경로에 맞게 불러오고 sentence에 punct를 추가합니다. """
         if punct:
-            print("NOTICE: Typed Entity Marker with Punct and Source activated")
+            print("NOTICE: Typed Entity Marker with Punct activated")
         else:
-            print("NOTICE: Typed Entity Marker without Punct and Source activated")
+            print("NOTICE: Typed Entity Marker without Punct activated")
 
         pd_dataset = pd.read_csv(dataset_dir)
         pdt = preprocessing_dataset_TypedEntityMarker()
@@ -243,10 +243,10 @@ class Model(pl.LightningModule):
         self.weight_decay = weight_decay
         self.warmup_steps = warmup_steps
 
-        self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
-        self.model_config.num_labels = 30
+        # self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
+        #self.model_config.num_labels = 30
         # 사용할 모델을 호출
-        self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
+        self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(f"hyunwoongko/kobart", num_labels = 30)#config=self.model_config)
         self.plm.resize_token_embeddings(vocab_size)
 
         # Loss 계산을 위해 사용될 손실함수를 호출
@@ -255,15 +255,15 @@ class Model(pl.LightningModule):
 
     def forward(self, x):
         input_ids = x["input_ids"]
-        token_type_ids = x["token_type_ids"]
         attention_mask = x["attention_mask"]
-        logits = self.plm(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)["logits"]
+
+        logits = self.plm(input_ids, attention_mask=attention_mask)["logits"]
         # dropout
         # logits = self.dropout(logits)
         return logits
 
     def training_step(self, batch, batch_idx):
-        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        x = {"input_ids": batch["input_ids"], "attention_mask": batch["attention_mask"]}
         y = batch["labels"]
         logits = self(x)
         loss = self.loss_func(logits.float(), y)
@@ -277,7 +277,7 @@ class Model(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        x = {"input_ids": batch["input_ids"], "attention_mask": batch["attention_mask"]}
         y = batch["labels"]
 
         logits = self(x)
@@ -293,12 +293,12 @@ class Model(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        x = {"input_ids": batch["input_ids"], "attention_mask": batch["attention_mask"]}
         y = batch["labels"]
         logits = self(x)
 
     def predict_step(self, batch, batch_idx):
-        x = {"input_ids": batch["input_ids"], "token_type_ids": batch["token_type_ids"], "attention_mask": batch["attention_mask"]}
+        x = {"input_ids": batch["input_ids"], "attention_mask": batch["attention_mask"]}
         y = batch["labels"]
         logits = self(x)
 
@@ -342,8 +342,8 @@ class CustomModelCheckpoint(ModelCheckpoint):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
-    model_name = model_dict[4]
+    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert", 5: "kobart"}
+    model_name = model_dict[5]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed

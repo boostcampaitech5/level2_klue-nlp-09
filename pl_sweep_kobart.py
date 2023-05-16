@@ -6,7 +6,7 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 
-from pl_train import Model, Dataloader, CustomModelCheckpoint
+from pl_train_kobart import Model, Dataloader, CustomModelCheckpoint
 
 from utils import seed_everything, load_yaml
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         "method": "random",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
             "learning_rate": {"values": [5e-5, 3e-5, 1e-5, 7e-6, 5e-6, 3e-6, 1e-6]},
-            "max_epoch": {"values": [10, 15]},
+            "max_epoch": {"values": [10, 15, 20]},
             "batch_size": {"values": [16, 32]},
             "model_name": {
                 "values": [
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                 callbacks=[
                     # learning rate를 매 step마다 기록
                     LearningRateMonitor(logging_interval="step"),
-                    EarlyStopping("val_f1", patience=5, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+                    EarlyStopping("val_f1", patience=8, mode="max", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
                     CustomModelCheckpoint(  # validation f1이 기준보다 높으면 저장
                         "./results/", f"{args.model_name}_{next(ver):0>4}_{{val_f1:.4f}}", monitor="val_f1", save_top_k=1, mode="max"
                     ),
@@ -113,4 +113,4 @@ if __name__ == "__main__":
 
     # Sweep 생성
     sweep_id = wandb.sweep(sweep=sweep_config, project=args.project_name)  # config 딕셔너리 추가  # project의 이름 추가
-    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=15)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행
+    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=20)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행

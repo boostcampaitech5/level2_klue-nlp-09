@@ -1,9 +1,9 @@
 # model
-model_name: klue/bert-base
+model_name: hyunwoongko/kobart
 
 # data
-train_path: ../dataset/train/v1/train.csv
-dev_path: ../dataset/train/v1/dev.csv
+train_path: ../dataset/train/train_95.csv
+dev_path: ../dataset/dev/dev_5.csv
 predict_path: ../dataset/test/test_data.csv
 
 # seed
@@ -11,12 +11,12 @@ seed: 42
 
 # train
 output_dir: ./results  # output directory
-save_total_limit: 5  # number of total save model.
-save_steps: 200  # model saving step.
-num_train_epochs: 10  # total number of training epochs
-learning_rate: 5e-5  # learning_rate
-per_device_train_batch_size: 16  # batch size per device during training
-per_device_eval_batch_size: 16  # batch size for evaluation
+save_total_limit: 1  # number of total save model.
+save_steps: 500  # model saving step.
+num_train_epochs: 1  # total number of training epochs
+learning_rate: 1e-5  # learning_rate
+per_device_train_batch_size: 32  # batch size per device during training
+per_device_eval_batch_size: 32  # batch size for evaluation
 warmup_steps: 500  # number of warmup steps for learning rate scheduler
 weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
@@ -29,16 +29,12 @@ eval_steps: 200  # evaluation step.
 load_best_model_at_end: True
 shuffle: True
 
-# lr scheduler
-lr_scheduler_step_size: 457
-lr_scheduler_gamma: 0.9
-
 # save
 save_path: ./best_model
 
 # wandb
-run_name: v1_new_tokenizer
-project_name: klue-bert-base
+run_name: test
+project_name: kobart
 
 data_clean:
   - spellcheck

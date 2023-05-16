@@ -64,8 +64,13 @@ class preprocessing_dataset_TypedEntityMarker:
         
         # @ * person * Bill @ was born in # ∧ city ∧ Seattle #.
         return sentence
+    
+    def insert_source(self, sentence, source):
+        sentence = self.insert_word(sentence, 0, f"<{source}> ")
+        
+        return sentence
 
-    def attach_TypedEntityMarker(self, dataset, punct=True):
+    def attach_TypedEntityMarkerAndSource(self, dataset, punct=True):
         """
         기존의 DataFrame의 sentence 열에 Typed Entity Marker를 부착합니다.
         Args:
@@ -87,16 +92,20 @@ class preprocessing_dataset_TypedEntityMarker:
         sentences = []
         sbj_dicts = []
         obj_dicts = []
+        src_dicts = []
         for idx, d in out_dataset.iterrows():
             sentences.append(d.sentence)
             sbj_dicts.append(eval(d.subject_entity))
             obj_dicts.append(eval(d.object_entity))
+            src_dicts.append(d.source)
         
         for idx, sentence in enumerate(sentences):
             sbj_dict = sbj_dicts[idx]
             obj_dict = obj_dicts[idx]
+            src_dict = src_dicts[idx]
             sentence = funct(sentence, self.insert_word, sbj_dict['start_idx'], sbj_dict['end_idx'], sbj_dict['type'], 
                         obj_dict['start_idx'], obj_dict['end_idx'], obj_dict['type'])
+            sentence = self.insert_source(sentence, src_dict)
             sentences[idx] = sentence
         
         out_dataset['sentence'] = sentences
