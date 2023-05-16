@@ -2,9 +2,10 @@
 model_name: klue/roberta-large
 
 # data
-train_path: ~/dataset/train/train_90_aug_4eda_er2000_nrcut_ksh.csv
-dev_path: ~/dataset/dev/dev_10_ksh.csv
+train_path: ~/dataset/train/v1dh/train_95.csv
+dev_path: ~/dataset/train/v1dh/dev_5.csv
 predict_path: ~/dataset/test/test_data.csv
+tem: punct
 
 # seed
 seed: 42
@@ -13,7 +14,7 @@ seed: 42
 output_dir: ./results/aug_test  # output directory
 save_total_limit: 5  # number of total save model.
 save_steps: 500  # model saving step.
-num_train_epochs: 10  # total number of training epochs
+num_train_epochs: 5  # total number of training epochs
 learning_rate: 5e-6  # learning_rate
 per_device_train_batch_size: 16  # batch size per device during training
 per_device_eval_batch_size: 16  # batch size for evaluation
@@ -28,6 +29,7 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
 eval_steps: 500  # evaluation step.
 load_best_model_at_end: True
 shuffle: True
+dropout: 0
 
 # lr scheduler
 lr_scheduler_step_size: 457
@@ -37,7 +39,7 @@ lr_scheduler_gamma: 0.9
 save_path: ./best_model/klue_roberta_large
 
 # wandb
-run_name: v1_10e_16b_pl
+run_name: class_weight
 project_name: klue-roberta-large
 
 # data_clean:

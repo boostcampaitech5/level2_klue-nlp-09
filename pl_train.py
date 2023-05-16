@@ -97,28 +97,28 @@ class Dataloader(pl.LightningDataModule):
 
         ########################### LDH/typed_entity_marker ################################
         # punct를 사용하지 않는 typed entity marker를 추가합니다 bert-base 사용
-        self.tokenizer.add_special_tokens(
-            {
-                "additional_special_tokens": [
-                    "<S:PER>",
-                    "</S:PER>",
-                    "<S:ORG>",
-                    "</S:ORG>",
-                    "<O:PER>",
-                    "</O:PER>",
-                    "<O:ORG>",
-                    "</O:ORG>",
-                    "<O:DAT>",
-                    "</O:DAT>",
-                    "<O:LOC>",
-                    "</O:LOC>",
-                    "<O:NOH>",
-                    "</O:NOH>",
-                    "<O:POH>",
-                    "</O:POH>",
-                ]
-            }
-        )
+        # self.tokenizer.add_special_tokens(
+        #     {
+        #         "additional_special_tokens": [
+        #             "<S:PER>",
+        #             "</S:PER>",
+        #             "<S:ORG>",
+        #             "</S:ORG>",
+        #             "<O:PER>",
+        #             "</O:PER>",
+        #             "<O:ORG>",
+        #             "</O:ORG>",
+        #             "<O:DAT>",
+        #             "</O:DAT>",
+        #             "<O:LOC>",
+        #             "</O:LOC>",
+        #             "<O:NOH>",
+        #             "</O:NOH>",
+        #             "<O:POH>",
+        #             "</O:POH>",
+        #         ]
+        #     }
+        # )
 
         # punct에 해당하는 special token을 추가합니다 roberta-large 사용
         self.tokenizer.add_special_tokens(
@@ -423,6 +423,7 @@ class Model(pl.LightningModule):
         weight_decay,
         vocab_size,
         dropout,
+        class_weights,
         warmup_steps=None,
     ):
         super().__init__()
@@ -447,8 +448,10 @@ class Model(pl.LightningModule):
         )
         self.plm.resize_token_embeddings(vocab_size)
 
+        self.class_weights = class_weights
         # Loss 계산을 위해 사용될 손실함수를 호출
-        self.loss_func = torch.nn.CrossEntropyLoss()
+        # self.loss_func = torch.nn.CrossEntropyLoss()
+        self.loss_func = torch.nn.functional.cross_entropy
         # self.dropout = torch.nn.Dropout(0.2)
 
     def forward(self, x):
@@ -472,7 +475,8 @@ class Model(pl.LightningModule):
         }
         y = batch["labels"]
         logits = self(x)
-        loss = self.loss_func(logits.float(), y)
+        # loss = self.loss_func(logits.float(), y)
+        loss = self.loss_func(logits.float(), y, weight=self.class_weights)
         self.log("train_loss", loss)
 
         f1 = klue_re_micro_f1(logits.argmax(-1).cpu(), y.cpu())
@@ -492,7 +496,8 @@ class Model(pl.LightningModule):
 
         logits = self(x)
 
-        loss = self.loss_func(logits.float(), y)
+        # loss = self.loss_func(logits.float(), y)
+        loss = self.loss_func(logits.float(), y, weight=self.class_weights)
         self.log("val_loss", loss)
 
         f1 = klue_re_micro_f1(logits.argmax(-1).cpu(), y.cpu())
@@ -561,7 +566,7 @@ class CustomModelCheckpoint(ModelCheckpoint):
             monitor_candidates = self._monitor_candidates(trainer)
             current = monitor_candidates.get(self.monitor)
             # added
-            if torch.isnan(current) or current < 63:
+            if torch.isnan(current) or current < 60:
                 return
             ###
             if (
@@ -580,7 +585,7 @@ if __name__ == "__main__":
         3: "xlm_roberta_large",
         4: "skt_kogpt2",
     }
-    model_name = model_dict[4]
+    model_name = model_dict[0]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -607,6 +612,19 @@ if __name__ == "__main__":
         # config.data_aug,
     )
 
+    # 커스텀 가중치
+    def compute_class_weights(train_path):
+        train_df = pd.read_csv(train_path)
+        class_counts = train_df["label"].value_counts().sort_index()
+        total_samples = train_df.shape[0]
+        class_weights = total_samples / (
+            len(class_counts) * class_counts.astype(float)
+        )
+        print(class_weights)
+        class_weights = torch.tensor(class_weights).to("cuda:0")
+        class_weights = class_weights.float()
+        return class_weights
+
     # total_steps = warmup_steps = None
     # if args.warm_up_ratio is not None:
     #     total_steps = (15900 // args.batch_size + (15900 % args.batch_size != 0)) * args.max_epoch
@@ -619,6 +637,7 @@ if __name__ == "__main__":
         weight_decay=config.weight_decay,
         vocab_size=vocab_size,
         dropout=config.dropout,
+        class_weights=compute_class_weights(config.train_path),
         warmup_steps=config.warmup_steps,
     )
 

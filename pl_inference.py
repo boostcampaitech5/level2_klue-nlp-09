@@ -33,8 +33,14 @@ def num_to_label(label):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "google_rembert"}
-    model_name = model_dict[4]
+    model_dict = {
+        0: "klue_bert_base",
+        1: "klue_roberta_large",
+        2: "snunlp_kr_electra",
+        3: "xlm_roberta_large",
+        4: "google_rembert",
+    }
+    model_name = model_dict[1]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -45,12 +51,13 @@ if __name__ == "__main__":
         config.model_name,
         config.per_device_train_batch_size,
         config.shuffle,
+        config.tem,
         config.train_path,
         config.dev_path,
         config.dev_path,
         config.predict_path,
-        config.data_clean,
-        config.data_aug,
+        # config.data_clean,
+        # config.data_aug,
     )
 
     # total_steps = warmup_steps = None
@@ -60,11 +67,11 @@ if __name__ == "__main__":
 
     # 예측할 모델 경로 설정
     # pt 파일인 경우
-    # model_path = "/opt/ml/code/best_model/klue_roberta_large/0511_693538.pt"
-    # score = "63.9121"
+    model_path = "/opt/ml/code/rl_class_weight.pt"
+    score = "73.0075"
     # ckpt 파일인 경우
-    model_path = "./results/google/rembert_0006_val_f1=63.0301.ckpt"
-    score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
+    # model_path = "./results/google/rembert_0006_val_f1=63.0301.ckpt"
+    # score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
 
     # 저장된 모델로 예측을 진행합니다.
     if model_path.endswith(".pt"):
@@ -91,7 +98,10 @@ if __name__ == "__main__":
         output_pred.append(result)
         output_prob.append(prob)
 
-    pred_answer, output_prob = np.concatenate(output_pred).tolist(), np.concatenate(output_prob, axis=0).tolist()  # model에서 class 추론
+    pred_answer, output_prob = (
+        np.concatenate(output_pred).tolist(),
+        np.concatenate(output_prob, axis=0).tolist(),
+    )  # model에서 class 추론
     pred_answer = num_to_label(pred_answer)  # 숫자로 된 class를 원래 문자열 라벨로 변환.
 
     # output 형식을 불러와서 예측된 결과로 바꿔주고, output.csv로 출력합니다.

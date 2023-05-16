@@ -5,6 +5,8 @@ from pytorch_lightning.callbacks import LearningRateMonitor, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from pl_train import Model, Dataloader, CustomModelCheckpoint
 from utils import seed_everything, load_yaml
+import torch
+import pandas as pd
 
 
 if __name__ == "__main__":
@@ -15,7 +17,7 @@ if __name__ == "__main__":
         3: "xlm_roberta_large",
         4: "skt_kogpt2",
     }
-    model_name = model_dict[4]
+    model_name = model_dict[1]
     args = load_yaml(model_name)
 
     # HP Tuning
@@ -23,19 +25,14 @@ if __name__ == "__main__":
     sweep_config = {
         "method": "bayes",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
-            "learning_rate": {"values": [5e-5, 1e-5, 5e-6, 1e-6, 5e-7]},
-            "max_epoch": {"values": [3, 5, 10, 20, 30]},
+            "learning_rate": {"values": [1e-5, 5e-6, 1e-6]},
+            "max_epoch": {"values": [10, 15, 20]},
             "batch_size": {"values": [16, 32, 64]},
-            "dropout": {"values": [0.0, 0.1, 0.2, 0.3]},
-            "tem": {"values": ["none", "non_punct", "punct"]},
-            "train_path": {
-                "values": [
-                    "~/dataset/train/train_90_ksh.csv",
-                    "~/dataset/train/train_90_aug_4eda_er1000_ksh.csv",
-                ]
-            },
-            "warmup_steps": {"values": [None, 500, 1000]},
-            "weight_decay": {"values": [0, 0.01, 0.05, 0.10]},
+            "dropout": {"values": [0.0]},
+            "tem": {"values": ["punct"]},
+            "train_path": {"values": ["~/dataset/train/v1dh/train_95.csv"]},
+            "warmup_steps": {"values": [None, 500]},
+            "weight_decay": {"values": [0, 0.01, 0.05]},
         },
         "metric": {"name": "val_loss", "goal": "minimize"},
     }
@@ -95,6 +92,18 @@ if __name__ == "__main__":
                 # args.data_aug,
             )
 
+            def compute_class_weights(train_path):
+                train_df = pd.read_csv(train_path)
+                class_counts = train_df["label"].value_counts().sort_index()
+                total_samples = train_df.shape[0]
+                class_weights = total_samples / (
+                    len(class_counts) * class_counts.astype(float)
+                )
+                print(class_weights)
+                class_weights = torch.tensor(class_weights).to("cuda:0")
+                class_weights = class_weights.float()
+                return class_weights
+
             vocab_size = len(dataloader.tokenizer)
             model = Model(
                 model_name=args.model_name,
@@ -102,6 +111,7 @@ if __name__ == "__main__":
                 weight_decay=config.weight_decay,
                 vocab_size=vocab_size,
                 dropout=config.dropout,
+                class_weights=compute_class_weights(args.train_path),
                 warmup_steps=config.warmup_steps,
             )
 

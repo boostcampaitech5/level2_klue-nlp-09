@@ -2,9 +2,10 @@
 model_name: klue/bert-base
 
 # data
-train_path: ../dataset/train/train_90_aug_4eda_er2000_nrcut_ksh.csv
-dev_path: ../dataset/dev/dev_10_ksh.csv
+train_path: ~/dataset/train/v1dh/train_95.csv
+dev_path: ~/dataset/train/v1dh/dev_5.csv
 predict_path: ../dataset/test/test.csv
+tem: punct
 
 # seed
 seed: 42
@@ -30,6 +31,7 @@ evaluation_strategy: steps  # evaluation strategy to adopt during training
 eval_steps: 100  # evaluation step.
 load_best_model_at_end: True
 shuffle: True
+dropout: 0
 
 # lr scheduler
 lr_scheduler_step_size: 457
