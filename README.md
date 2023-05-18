@@ -10,6 +10,7 @@ level2_klue-nlp-09
 |-- best_model
 |-- config
 |   `-- config.yaml
+|-- preprocessing 
 |-- eda
 |   |-- JYS.ipynb
 |   |-- KSH.ipynb
