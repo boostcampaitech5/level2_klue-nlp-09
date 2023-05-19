@@ -33,8 +33,13 @@ def num_to_label(label):
 
 
 if __name__ == "__main__":
-    model_dict = {0: "klue_bert_base", 1: "klue_roberta_large", 2: "snunlp_kr_electra", 3: "xlm_roberta_large", 4: "skt_kogpt2"}
-    model_name = model_dict[4]
+    model_dict = {0: "klue_bert_base", 
+                  1: "klue_roberta_large", 
+                  2: "snunlp_kr_electra", 
+                  3: "xlm_roberta_large", 
+                  4: "skt_kogpt2",
+                  5: "twhin_bert_large"}
+    model_name = model_dict[5]
     # model_name = "pl_test"
     config = load_yaml(model_name)
     # set seed
@@ -63,7 +68,8 @@ if __name__ == "__main__":
     # pt 파일인 경우
     # model_path = "model.pt"
     # ckpt 파일인 경우
-    model_path = "./results/skt_kogpt2/kogpt2_0002_val_f1:62.1844.pt"
+    # model_path = "./results/xlm_roberta_large/kogpt2_0002_val_f1:62.1844.pt"
+    model_path = "./results/twhin_bert_large/twhin_bert_large_0001_val_f1:61.2544.pt"
     score = re.search(r"[0-9]{2}\.[0-9]{4}", model_path).group()
     # score = re.match(r"(?<==).*(?=(\.ckpt|\.pt))", model_path).group()
 

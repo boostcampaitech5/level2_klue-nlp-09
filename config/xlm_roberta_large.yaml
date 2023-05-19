@@ -1,5 +1,5 @@
 # model
-model_name: Twitter/twhin-bert-large
+model_name: xlm-roberta-large
 
 # data
 train_path: ~/dataset/train/train_90_ljs.csv
@@ -14,16 +14,16 @@ tem: punct # typed entity marker: "none", "non_punct", "punct"
 seed: 42
 
 # train
-output_dir: ./results/twhin_bert_large  # output directory
+output_dir: ./results/xlm_roberta_large  # output directory
 save_total_limit: 2  # number of total save model.
 save_steps: 500  # model saving step.
-num_train_epochs: 20  # total number of training epochs
+num_train_epochs: 15  # total number of training epochs
 learning_rate: 5e-6  # learning_rate
 dropout: 0.2
 per_device_train_batch_size: 32  # batch size per device during training
 per_device_eval_batch_size: 32  # batch size for evaluation
 warmup_steps: 2000  # number of warmup steps for learning rate scheduler
-weight_decay: 0.05  # strength of weight decay
+weight_decay: 0.01  # strength of weight decay
 logging_dir: ./logs  # directory for storing logs
 logging_steps: 10  # log saving step.
 evaluation_strategy: steps  # evaluation strategy to adopt during training
@@ -34,8 +34,8 @@ eval_steps: 250  # evaluation step.
 load_best_model_at_end: True
 
 # save
-save_path: ./best_model/twhin_bert_large
+save_path: ./best_model/xlm_roberta_large
 
 # wandb
-run_name: tbl_best2
-project_name: twhin_bert_large
+run_name: xlm_best1
+project_name: xlm_roberta_large

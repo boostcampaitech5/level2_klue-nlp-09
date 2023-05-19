@@ -513,7 +513,7 @@ if __name__ == "__main__":
         callbacks=[
             # learning rate를 매 step마다 기록
             LearningRateMonitor(logging_interval="step"),
-            EarlyStopping("val_loss", patience=8, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+            EarlyStopping("val_loss", patience=12, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
             # CustomModelCheckpoint("./save/", "snunlp_MSE_002_{val_pearson:.4f}", monitor="val_pearson", save_top_k=1, mode="max"),
         ],
     )
@@ -527,7 +527,7 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dataloader)
 
     # # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, "twhin_bert_large_test1.pt")
+    torch.save(model, "twhin_bert_large_best1.pt")
     # model.save_pretrained(config.save_path)
 
 # TODO: auprc, accuracy 적용

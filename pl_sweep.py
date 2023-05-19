@@ -14,7 +14,7 @@ if __name__ == "__main__":
                   3: "xlm_roberta_large", 
                   4: "skt_kogpt2",
                   5: "twhin_bert_large"}
-    model_name = model_dict[5]
+    model_name = model_dict[3]
     args = load_yaml(model_name)
 
     # HP Tuning
@@ -23,17 +23,9 @@ if __name__ == "__main__":
         "method": "bayes",  # random: 임의의 값의 parameter 세트를 선택
         "parameters": {
             "learning_rate": {"values": [5e-5, 1e-5, 5e-6, 1e-6, 5e-7]},
-            # "max_epoch": {"values": [3, 5, 10, 20, 30]},
             "batch_size": {"values": [8, 16, 24]},
-            "dropout": {"values": [0.0, 0.1, 0.2, 0.3]},
-            "train_path" : {
-                "values": [
-                    "~/dataset/train/train_90_ksh.csv",
-                    "~/dataset/train/train_90_aug_4eda_er1000_ksh.csv",
-                ]
-            },
-            "warmup_steps": {"values": [None, 500, 1000, 2000]},
-            # "warm_up_ratio": {"values": [0.02, 0.05, 0.10, 0.15]},
+            "dropout": {"values": [0.1, 0.2, 0.3]},
+            "warmup_steps": {"values": [None, 500, 1000, 2000, 3000]},
             "weight_decay": {"values": [0, 0.01, 0.03, 0.05, 0.10]},
         },
         "metric": {"name": "val_loss", "goal": "minimize"},
@@ -56,17 +48,16 @@ if __name__ == "__main__":
         """
 
         with wandb.init(config=config) as run:
-            config = wandb.config
-            tp_nickname = 'base' if config.train_path == '~/dataset/train/train_90_ksh.csv' else 'aug'
-            ws_nickname = config.warmup_steps if config.warmup_steps else 0
             # set seed
             seed_everything(args.seed)
+
+            config = wandb.config
+            ws_nickname = config.warmup_steps if config.warmup_steps else 0
             run.name = f"LR{config.learning_rate}_\
                 BS{config.batch_size}_\
                     DO{config.dropout}_\
-                        TP{tp_nickname}_\
-                            WS{ws_nickname}_\
-                                WD{config.weight_decay}"
+                        WS{ws_nickname}_\
+                            WD{config.weight_decay}"
 
             wandb_logger = WandbLogger(project=args.project_name)
             dataloader = Dataloader(
@@ -74,7 +65,7 @@ if __name__ == "__main__":
                 batch_size=config.batch_size,
                 shuffle=args.shuffle,
                 tem=args.tem,
-                train_path=config.train_path,
+                train_path=args.train_path,
                 dev_path=args.dev_path,
                 test_path=args.dev_path,
                 predict_path=args.predict_path,
@@ -105,7 +96,7 @@ if __name__ == "__main__":
                 callbacks=[
                     # learning rate를 매 step마다 기록
                     LearningRateMonitor(logging_interval="step"),
-                    EarlyStopping("val_loss", patience=8, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
+                    EarlyStopping("val_loss", patience=6, mode="min", check_finite=False),  # validation f1이 5번 이상 개선되지 않으면 학습을 종료
                     CustomModelCheckpoint(  # validation f1이 기준보다 높으면 저장
                         "./results/", f"{args.model_name}_{next(ver):0>4}_{{val_f1:.4f}}", monitor="val_f1", save_top_k=1, mode="max"
                     ),
@@ -116,4 +107,4 @@ if __name__ == "__main__":
 
     # Sweep 생성
     sweep_id = wandb.sweep(sweep=sweep_config, project=args.project_name)  # config 딕셔너리 추가  # project의 이름 추가
-    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=20)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행
+    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=15)  # sweep의 정보를 입력  # train이라는 모델을 학습하는 코드를  # 총 n회 실행
